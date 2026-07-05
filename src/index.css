@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+
+
+@layer utilities {
+  .scroll-modern::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scroll-modern::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 9999px;
+  }
+
+  .scroll-modern::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      180deg,
+      rgba(99,102,241,.9),
+      rgba(59,130,246,.9)
+    );
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .scroll-modern::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      rgb(129,140,248),
+      rgb(96,165,250)
+    );
+  }
+
+  .scroll-modern {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(99 102 241) transparent;
+  }
+}
+
+html, body {
+  overflow-x: hidden;
+}
+
