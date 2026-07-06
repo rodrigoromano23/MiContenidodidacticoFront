@@ -322,7 +322,7 @@ export default function SuperAdmin() {
     setLoading(true);
     try {
       // Reemplaza esta ruta si tu endpoint de login en Express usa otra URL (ej: /api/superadmin/login)
-      const respuesta = await fetch(`${API_URL}/api/auth/login-superadmin`, {
+      const respuesta = await fetch(`${API_URL}/api/superadmin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: clave })
@@ -359,7 +359,7 @@ export default function SuperAdmin() {
     setLoading(true);
     try {
       // Reemplaza esta ruta por la URL exacta que use tu router para activar 'getSuperAdminStats'
-      const respuesta = await fetch(`${API_URL}/api/auth/stats-superadmin`);
+      const respuesta = await fetch(`${API_URL}/api/superadmin/stats`);
       const stats = await respuesta.json();
 
       if (respuesta.ok) {
