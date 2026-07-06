@@ -310,12 +310,10 @@ export default function SuperAdmin() {
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Traemos la URL base del backend desde las variables de entorno
-  const API_URL = import.meta.env.VITE_API_URL;
+  // Leemos la clave de forma segura desde las variables de entorno de Vite
+  const CLAVE_SUPERADMIN = import.meta.env.VITE_CLAVE_SUPERADMIN;
 
-  // LOGIN SEGURO CON VALIDACIONES CONECTADO AL BACKEND
-  const handleLogin = async () => {
-    // 1. VALIDACIÓN: Evitar campos vacíos o solo espacios en blanco
+  const handleLogin = () => {
     if (!clave.trim()) {
       Swal.fire({
         icon: "warning",
@@ -326,46 +324,23 @@ export default function SuperAdmin() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      // Mandamos la clave al endpoint seguro del backend
-      const respuesta = await fetch(`${API_URL}/api/auth/login-superadmin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: clave })
+    // Comparamos directamente con la variable de entorno
+    if (clave === CLAVE_SUPERADMIN) {
+      setIsAuth(true);
+      Swal.fire({
+        icon: "success",
+        title: "Acceso Concedido",
+        text: "Bienvenido al Panel de Control Global",
+        timer: 1500,
+        showConfirmButton: false,
       });
-
-      const datos = await respuesta.json();
-
-      if (respuesta.ok && datos.auth) {
-        setIsAuth(true);
-        Swal.fire({
-          icon: "success",
-          title: "Acceso Concedido",
-          text: "Bienvenido al Panel de Control Global",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      } else {
-        // Alerta elegante de error devuelto por el servidor
-        Swal.fire({
-          icon: "error",
-          title: "Clave Incorrecta",
-          text: datos.message || "Verifica las credenciales de seguridad de SuperAdmin.",
-          confirmButtonColor: "#ef4444"
-        });
-      }
-    } catch (error) {
-      console.error("Error en el login de SuperAdmin:", error);
+    } else {
       Swal.fire({
         icon: "error",
-        title: "Error de Conexión",
-        text: "No se pudo conectar con el servidor de autenticación. Intenta más tarde.",
-        confirmButtonColor: "#3b82f6"
+        title: "Clave Incorrecta",
+        text: "Verifica las credenciales de seguridad de SuperAdmin.",
+        confirmButtonColor: "#ef4444"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -373,7 +348,6 @@ export default function SuperAdmin() {
     if (e.key === "Enter") handleLogin();
   };
 
-  // PROCESAR Y AGRUPAR MÉTRICAS AVANZADAS
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -421,7 +395,6 @@ export default function SuperAdmin() {
 
   const maxPublicaciones = data.length > 0 ? data[0].cantidad : 1;
 
-  // 🔐 FORMULARIO DE ACCESO PREMIUM (LOGIN)
   if (!isAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
@@ -444,17 +417,15 @@ export default function SuperAdmin() {
               type="password"
               placeholder="••••"
               value={clave}
-              disabled={loading}
               onKeyDown={handleKeyDownLogin}
               onChange={(e) => setClave(e.target.value)}
-              className="flex-1 p-3.5 bg-transparent text-white text-center font-mono outline-none placeholder-slate-600 tracking-widest disabled:opacity-50"
+              className="flex-1 p-3.5 bg-transparent text-white text-center font-mono outline-none placeholder-slate-600 tracking-widest"
             />
             <button
               onClick={handleLogin}
-              disabled={loading}
-              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-5 flex items-center justify-center transition font-bold disabled:opacity-50"
+              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-5 flex items-center justify-center transition font-bold"
             >
-              {loading ? "..." : <ArrowRight className="w-4 h-4" />}
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -462,7 +433,6 @@ export default function SuperAdmin() {
     );
   }
 
-  // 📊 PANEL DE CONTROL ANALÍTICO
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       <header className="bg-slate-900/80 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-6 py-4 sticky top-0 z-50">
@@ -546,7 +516,6 @@ export default function SuperAdmin() {
                   <tbody className="divide-y divide-white/5">
                     {datosFiltrados.map((item, index) => {
                       const porcentaje = Math.round((item.cantidad / maxPublicaciones) * 100);
-                      
                       return (
                         <tr key={index} className="hover:bg-white/[0.02] transition duration-200 group">
                           <td className="px-6 py-4 font-medium text-slate-200 flex items-center gap-2.5">
