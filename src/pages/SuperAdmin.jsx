@@ -103,7 +103,7 @@ export default function SuperAdmin() {
   if (!isAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
-        {/* Fondo animado sutil */
+        {/* Fondo animado sutil */}
         /*<div className="absolute inset-0 opacity-30">
           <div className="w-full h-full bg-[radial-gradient(circle_at_30%_20%,#06b6d4_0px,transparent_40%),radial-gradient(circle_at_70%_60%,#3b82f6_0px,transparent_50%)]" />
         </div>
@@ -143,7 +143,7 @@ export default function SuperAdmin() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       
-      {/* HEADER PREMIUM */
+      {/* HEADER PREMIUM */}
       /*<header className="bg-slate-900/80 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-6 py-4 sticky top-0 z-50">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-lg">
@@ -163,10 +163,10 @@ export default function SuperAdmin() {
         </button>
       </header>
 
-      {/* CONTENIDO PRINCIPAL */
+      {/* CONTENIDO PRINCIPAL */}
       /*<main className="flex-1 max-w-5xl w-full mx-auto p-6 space-y-6">
         
-        {/* TITULACIÓN DE LA SECCIÓN */
+        {/* TITULACIÓN DE LA SECCIÓN */}
         /*<div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold tracking-tight">Métricas de Actividad Docente</h2>
           <p className="text-xs text-slate-400">Monitoreo en tiempo real de contenidos y volumen de aportes pedagógicos</p>
@@ -178,7 +178,7 @@ export default function SuperAdmin() {
           </div>
         ) : (
           <>
-            {/* 📈 TARJETAS DE MÉTRICAS GLOBALES (KPIs) */
+            {/* 📈 TARJETAS DE MÉTRICAS GLOBALES (KPIs) */}
             /*<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               <div className="bg-slate-900/40 border border-white/5 p-5 rounded-2xl flex items-center justify-between shadow-xl">
@@ -203,7 +203,7 @@ export default function SuperAdmin() {
 
             </div>
 
-            {/* 🔎 FILTRO INTEGRADO */
+            {/* 🔎 FILTRO INTEGRADO */}
             /*<div className="bg-slate-900/40 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 <BarChart3 className="w-4 h-4 text-cyan-400" /> Distribución de Contenido
@@ -219,7 +219,7 @@ export default function SuperAdmin() {
               </div>
             </div>
 
-            {/* 📊 TABLA ANALÍTICA PREMIUM CON BARRAS DE PROGRESO */
+            {/* 📊 TABLA ANALÍTICA PREMIUM CON BARRAS DE PROGRESO */}
             /*<div className="bg-slate-900/20 border border-white/10 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left text-sm">
@@ -237,14 +237,14 @@ export default function SuperAdmin() {
                       
                       return (
                         <tr key={index} className="hover:bg-white/[0.02] transition duration-200 group">
-                          {/* Columna Nombre */
+                          {/* Columna Nombre */}
                           /*<td className="px-6 py-4 font-medium text-slate-200 flex items-center gap-2.5">
                             <div className="w-7 h-7 bg-slate-950 border border-white/10 text-slate-400 text-xs font-bold flex items-center justify-center rounded-lg uppercase group-hover:border-cyan-500/30 group-hover:text-cyan-400 transition">
                               {item.docente.substring(0, 2)}
                             </div>
                             <span className="truncate">{item.docente}</span>
                           </td>
-                          {/* Columna de Barra de Progreso */
+                          {/* Columna de Barra de Progreso */}
                           /*<td className="px-6 py-4 hidden sm:table-cell w-1/2">
                             <div className="flex items-center gap-3">
                               <div className="flex-1 h-2 bg-slate-950 border border-white/5 rounded-full overflow-hidden">
@@ -256,7 +256,7 @@ export default function SuperAdmin() {
                               <span className="text-[10px] text-slate-500 w-7 font-mono text-right">{porcentaje}%</span>
                             </div>
                           </td>
-                          {/* Columna Número de Publicaciones */
+                          {/* Columna Número de Publicaciones */}
                           /*<td className="px-6 py-4 text-right font-mono font-bold text-base text-cyan-400">
                             <div className="flex items-center justify-end gap-1.5">
                               {item.cantidad}
