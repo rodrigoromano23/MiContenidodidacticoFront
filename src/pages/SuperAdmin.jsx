@@ -330,26 +330,22 @@ export default function SuperAdmin() {
 
       const datos = await respuesta.json();
 
-      if (respuesta.ok && datos.role === "superadmin") {
-        setIsAuth(true);
-        Swal.fire({
-          icon: "success",
-          title: "Acceso Concedido",
-          text: "Bienvenido al Panel de Control Global",
-          timer: 1500,
-          showConfirmButton: false,
-        });
+      if (respuesta.ok) {
+        const result = stats.sort((a, b) => b.total - a.total);
+        setData(result);
+
+        const total = result.reduce((acc, item) => acc + item.total, 0);
+        setTotalPublicaciones(total);
       } else {
-        Swal.fire("Clave Incorrecta", datos.message || "Verifica las credenciales de seguridad.", "error");
+        throw new Error(stats.message || "Error en la respuesta del servidor");
       }
     } catch (error) {
       console.error(error);
-      Swal.fire("Error de Conexión", "No se pudo conectar con el servidor backend.", "error");
+      Swal.fire("Error", "No se pudieron compilar las estadísticas globales del backend.", "error");
     } finally {
       setLoading(false);
     }
   };
-
   const handleKeyDownLogin = (e) => {
     if (e.key === "Enter") handleLogin();
   };
