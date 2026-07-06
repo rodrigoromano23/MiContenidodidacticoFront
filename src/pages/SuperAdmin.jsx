@@ -322,7 +322,7 @@ export default function SuperAdmin() {
     setLoading(true);
     try {
       // Reemplaza esta ruta si tu endpoint de login en Express usa otra URL (ej: /api/superadmin/login)
-      const respuesta = await fetch(`${API_URL}/api/superadmin/login`, {
+      const respuesta = await fetch(`${API_URL}/api/superadmin/stats`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: clave })
