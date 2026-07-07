@@ -82,7 +82,7 @@ export default function SubirMaterial() {
 
       // 🔥 ENVIAMOS LA CONTRASEÑA DIRECTAMENTE EN LA URL
       // Esto previene cualquier problema con Multer o filtros de CORS en Render
-      const res = await fetch("https://micontenidodidactico.onrender.com/api/materials?adminPassword=admin123", {
+      const res = await fetch("https://micontenidodidactico.onrender.com/api/materials?adminPassword=1234", {
         method: "POST",
         body: formData
       });
