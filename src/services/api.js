@@ -1,4 +1,4 @@
-const BASE_URL = "https://micontenidodidactico.onrender.comapi/materials";
+const BASE_URL = "https://micontenidodidactico.onrender.com/api/materials";
 
 
 // ======================
