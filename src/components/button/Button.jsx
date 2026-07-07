@@ -412,7 +412,7 @@ export default function ButtonPanel({
   return (
     <div className="flex flex-col md:flex-row h-full md:h-screen overflow-visible">
       
-      {/* PANEL FLOTANTE DESPLEGABLE (SÓLO ESCRITORIO O MODAL MOBILE SI SE ABRE) */}
+      {/* PANEL FLOTANTE DESPLEGABLE */}
       <div className={`overflow-hidden transition-all duration-500 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
         isOpen 
           ? "fixed inset-x-0 bottom-24 top-20 z-40 md:relative md:inset-auto md:w-[380px] md:h-full border-t md:border-t-0 md:border-l" 
@@ -423,8 +423,8 @@ export default function ButtonPanel({
         </div>
       </div>
 
-      {/* 🎛️ CONTENEDOR DE BOTONES (Barra Lateral en Escritorio / Footer Deslizable Horizontal en Celular) */}
-      <div className="fixed bottom-0 left-0 w-full h-16 bg-[#1e293b]/95 backdrop-blur-md border-t border-white/10 flex flex-row items-center justify-start px-4 gap-4 overflow-x-auto no-scrollbar z-50 md:relative md:bottom-auto md:left-auto md:w-20 md:h-full md:flex-col md:py-10 md:gap-8 md:overflow-x-visible md:border-t-0 md:border-l">
+      {/* 🎛️ CONTENEDOR DE BOTONES (Corregido con h-20 para centrar botones verticales en móvil) */}
+      <div className="fixed bottom-0 left-0 w-full h-20 bg-[#1e293b]/95 backdrop-blur-md border-t border-white/10 flex flex-row items-center justify-start px-5 gap-4 overflow-x-auto no-scrollbar z-50 md:relative md:bottom-auto md:left-auto md:w-20 md:h-full md:flex-col md:py-10 md:gap-8 md:overflow-x-visible md:border-t-0 md:border-l">
         
         <button 
           onClick={() => toggleSection("history")} 
@@ -468,7 +468,7 @@ export default function ButtonPanel({
             active === "Calculos" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "border-white/10 bg-slate-950/40 hover:scale-110"
           }`}
         >
-          <Gamepad2 className="w-5 h-5 text-white group-hover:text-cyan-400" />
+          <Gamepad2 className="w-5 h-5 text-white" />
         </button>
         
         <button 
@@ -492,4 +492,3 @@ export default function ButtonPanel({
       </div>
     </div>
   );
-}
