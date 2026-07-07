@@ -70,6 +70,8 @@ export default function SubirMaterial() {
       formData.append("contenido", contenido);
       formData.append("docente", docente);
 
+      formData.append("x-admin-password", "admin123");
+
       if (imagenes.length > 0) {
         imagenes.forEach((file) => {
           formData.append("image", file);
@@ -88,7 +90,11 @@ export default function SubirMaterial() {
         body: formData
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      }
 
       if (!res.ok) {
         throw new Error(data.message || "Error al subir material");
