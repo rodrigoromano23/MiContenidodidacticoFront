@@ -491,4 +491,4 @@ export default function ButtonPanel({
 
       </div>
     </div>
-  );
+  )};
