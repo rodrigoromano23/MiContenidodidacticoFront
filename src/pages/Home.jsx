@@ -14,8 +14,9 @@ export default function Home() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [aiData, setAiData] = useState(null);
   
-  // Estado para controlar qué sección del marcador telefónico mobile está expandida (1, 2, 3, etc.)
-  const [menuAbierto, setMenuAbierto] = useState(null);
+  // Estado para controlar qué sección del panel cuadrado está expandida en Mobile
+  // Puede ser: "historial", "micro", "info", o null si todo está cerrado
+  const [seccionAbierta, setSeccionAbierta] = useState(null);
   
   // VISOR DE IMAGENES
   const [selectedImage, setSelectedImage] = useState(null);
@@ -86,8 +87,6 @@ export default function Home() {
         ? cmd.value.replace(/[\.,]+/g, "").trim()
         : cmd.value;
 
-      console.log("🚀 Buscando en BD valor 100% limpio:", valorLimpio);
-
       setQuery(valorLimpio);
       handleSearch(valorLimpio);
     }
@@ -98,7 +97,7 @@ export default function Home() {
       setQuery("");
       setResults([]);
       setSelectedImage(null);
-      setMenuAbierto(null);
+      setSeccionAbierta(null);
     }
 
     if (cmd.type === "OPEN_IMAGES" || cmd.type === "VIEW_IMAGES") {
@@ -161,9 +160,9 @@ export default function Home() {
     return <Loader />;
   }
 
-  // Manejador para el colapsable / acordeón en Mobile
-  const toggleMenuMobile = (num) => {
-    setMenuAbierto(menuAbierto === num ? null : num);
+  // Alternar acordeón móvil
+  const toggleSeccionMobile = (seccion) => {
+    setSeccionAbierta(seccionAbierta === seccion ? null : seccion);
   };
 
   return (
@@ -213,9 +212,7 @@ export default function Home() {
         
         {/* Barra de búsqueda móvil reactiva */}
         <div className={`transition-all duration-500 ease-in-out left-0 w-full px-4 z-30 ${
-          isCompact 
-            ? "fixed top-4" 
-            : "absolute top-1/3 -translate-y-1/2"
+          isCompact ? "fixed top-4" : "absolute top-1/3 -translate-y-1/2"
         }`}>
           {!isCompact && (
             <div className="text-center mb-4">
@@ -228,7 +225,7 @@ export default function Home() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar temas..."
-              className="w-full py-3.5 pl-5 pr-12 rounded-full bg-white text-black text-sm focus:outline-none shadow-inner"
+              className="w-full py-3.5 pl-5 pr-12 rounded-full bg-white text-black text-sm focus:outline-none"
             />
             <button
               onClick={() => handleSearch()}
@@ -244,7 +241,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bloque principal una vez realizada la búsqueda */}
+        {/* Bloque principal móvil */}
         {searched && results.length > 0 && (
           <div className="w-full space-y-6 mt-4">
             
@@ -256,48 +253,110 @@ export default function Home() {
               <div className="h-[2px] bg-cyan-400 max-w-[150px] mx-auto mt-2 opacity-80" />
             </div>
 
-            {/* TELEFÓNICO CIRCULAR (3 COLUMNAS) */}
-            <div className="max-w-[280px] mx-auto grid grid-cols-3 gap-y-4 gap-x-2 justify-items-center bg-slate-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md shadow-2xl">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => toggleMenuMobile(num)}
-                  className={`w-14 h-14 rounded-full border text-base font-bold flex items-center justify-center transition-all duration-200 shadow-md ${
-                    menuAbierto === num
-                      ? "bg-cyan-500 text-slate-950 border-cyan-400 scale-95 font-black shadow-cyan-500/20"
-                      : "bg-slate-950/80 text-slate-200 border-white/10 active:bg-cyan-500 active:text-slate-950"
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
+            {/* 🎛️ PANEL BUTTON ADAPTADO A CUADRADOS (3 COLUMNAS) */}
+            <div className="max-w-sm mx-auto grid grid-cols-3 gap-3 bg-slate-900/60 p-3 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
+              
+              {/* Botón 1: Micrófono */}
+              <button
+                onClick={() => {
+                  setMicEnabled(!micEnabled);
+                  toggleSeccionMobile("micro");
+                }}
+                className={`aspect-square rounded-xl border p-2 flex flex-col items-center justify-center gap-1 text-center transition-all duration-200 ${
+                  micEnabled 
+                    ? "bg-red-500/20 border-red-500 text-red-400 scale-95 shadow-lg shadow-red-500/10 font-bold" 
+                    : seccionAbierta === "micro"
+                    ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold"
+                    : "bg-slate-950/80 text-slate-300 border-white/5 active:bg-cyan-500 active:text-slate-950"
+                }`}
+              >
+                <span className="text-lg">{micEnabled ? "🛑" : "🎙️"}</span>
+                <span className="text-[10px] uppercase font-semibold tracking-wider">Voz</span>
+              </button>
+
+              {/* Botón 2: Historial */}
+              <button
+                onClick={() => toggleSeccionMobile("historial")}
+                className={`aspect-square rounded-xl border p-2 flex flex-col items-center justify-center gap-1 text-center transition-all duration-200 ${
+                  seccionAbierta === "historial"
+                    ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold"
+                    : "bg-slate-950/80 text-slate-300 border-white/5 active:bg-cyan-500 active:text-slate-950"
+                }`}
+              >
+                <span className="text-lg">⏳</span>
+                <span className="text-[10px] uppercase font-semibold tracking-wider">Historial</span>
+              </button>
+
+              {/* Botón 3: Info / Docente */}
+              <button
+                onClick={() => toggleSeccionMobile("info")}
+                className={`aspect-square rounded-xl border p-2 flex flex-col items-center justify-center gap-1 text-center transition-all duration-200 ${
+                  seccionAbierta === "info"
+                    ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold"
+                    : "bg-slate-950/80 text-slate-300 border-white/5 active:bg-cyan-500 active:text-slate-950"
+                }`}
+              >
+                <span className="text-lg">👨‍🏫</span>
+                <span className="text-[10px] uppercase font-semibold tracking-wider">Docente</span>
+              </button>
+
             </div>
 
-            {/* SECCIONES DESPLEGABLES (ACORDEÓN) */}
-            <div className="space-y-2 max-w-sm mx-auto">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                menuAbierto === num && (
-                  <div key={num} className="bg-slate-900/80 border border-cyan-500/30 p-4 rounded-2xl animate-fadeIn shadow-xl backdrop-blur-lg text-xs space-y-2">
-                    <p className="text-cyan-400 font-mono tracking-widest uppercase text-[10px] border-b border-white/5 pb-1">Sección Activa: Módulo {num}</p>
-                    <p className="text-slate-300 leading-relaxed">
-                      Aquí puedes inyectar datos del módulo o complementos del historial. Historial relacionado detectado en la posición {num}.
-                    </p>
+            {/* DESPLIEGUE DINÁMICO DE CONTENIDO (ACORDEÓN DEL PANEL REAL) */}
+            <div className="max-w-sm mx-auto w-full">
+              {seccionAbierta === "micro" && (
+                <div className="bg-slate-900/90 border border-red-500/30 p-4 rounded-xl animate-fadeIn shadow-xl backdrop-blur-md text-xs text-center space-y-1">
+                  <p className="text-red-400 font-bold font-mono text-[10px] uppercase tracking-wider">Asistente de Voz Activo</p>
+                  <p className="text-slate-300">Decí <strong className="text-white">"Buscar [tema]"</strong> o <strong className="text-white">"Cerrar panel"</strong> para controlar la app con comandos de voz nativos.</p>
+                </div>
+              )}
+
+              {seccionAbierta === "historial" && (
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl backdrop-blur-md text-xs space-y-2">
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Últimas Búsquedas</p>
+                  {searchHistory.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {searchHistory.map((h, idx) => (
+                        <span 
+                          key={idx} 
+                          onClick={() => {
+                            setQuery(h);
+                            handleSearch(h);
+                          }}
+                          className="bg-slate-950 text-cyan-400/90 px-2.5 py-1 rounded-md border border-white/5 active:bg-cyan-500 active:text-slate-950 text-[11px] font-medium transition cursor-pointer"
+                        >
+                          {h}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-center py-1">No hay búsquedas recientes.</p>
+                  )}
+                </div>
+              )}
+
+              {seccionAbierta === "info" && (
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl backdrop-blur-md text-xs space-y-1.5">
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Metadatos del Material</p>
+                  <div className="text-slate-300 space-y-1 pt-0.5">
+                    <p>👨‍🏫 <strong>Docente:</strong> {results[0].docente || "No especificado"}</p>
+                    <p>📂 <strong>Imágenes en la nube:</strong> {getImagesArray(results[0]).length} archivos</p>
                   </div>
-                )
-              ))}
+                </div>
+              )}
             </div>
 
-            {/* CAJA DE TEXTO DINÁMICA CON MÁQUINA DE ESCRIBIR */}
+            {/* CONTENIDO PRINCIPAL CON EFECTO ESCRITURA */}
             <div className="w-full bg-slate-950/60 backdrop-blur-md border border-white/10 p-5 rounded-2xl shadow-xl">
               <div className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap font-sans">
                 <TypeWriter text={results[0].contenido} />
               </div>
             </div>
 
-            {/* GRILLA DE IMÁGENES COMPLEMENTARIAS */}
+            {/* IMÁGENES AL PIE */}
             {getImagesArray(results[0]).length > 0 && (
               <div className="space-y-2">
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">Galería de Imágenes</p>
+                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">Imágenes Adjuntas</p>
                 <div className="grid grid-cols-1 gap-3">
                   {getImagesArray(results[0]).slice(0, 4).map((imgUrl, index) => (
                     <div 
@@ -328,7 +387,6 @@ export default function Home() {
       {/* ========================================== */}
       <div className="hidden md:flex flex-1 relative flex-col justify-between p-12 overflow-hidden z-10">
         
-        {/* BARRA DE BÚSQUEDA ESCRITORIO */}
         <div className={`fixed transition-all duration-500 ease-in-out z-20 ${
           isCompact ? "top-6 left-6 w-[280px] scale-95" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
         }`}>
@@ -365,7 +423,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* CONTENEDOR DE RESULTADOS ESCRITORIO */}
         {searched && results.length > 0 && (
           <div className="w-full flex-1 flex flex-col mt-16 justify-between overflow-hidden">
             {results.map((item, i) => (
@@ -421,10 +478,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* VISOR DE IMÁGENES ESTILO PICASA 3 (COMPARTIDO GLOBAL) */}
+      {/* VISOR GLOBAL DE IMÁGENES */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
           onClick={() => setSelectedImage(null)}
         >
           <button 
