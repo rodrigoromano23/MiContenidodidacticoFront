@@ -410,85 +410,89 @@ export default function ButtonPanel({
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full md:h-screen overflow-visible">
-      
-      {/* PANEL FLOTANTE DESPLEGABLE */}
-      <div className={`overflow-hidden transition-all duration-500 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
-        isOpen 
-          ? "fixed inset-x-0 bottom-24 top-20 z-40 md:relative md:inset-auto md:w-[380px] md:h-full border-t md:border-t-0 md:border-l" 
-          : "w-0 h-0 md:w-0 md:h-full"
-      }`}>
-        <div className={`h-full p-6 overflow-y-auto transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>
-          {renderSection()}
+  <div className="flex flex-col md:flex-row h-full md:h-screen overflow-visible">
+    
+    {/* 🔼 PANEL FLOTANTE DESPLEGABLE (Emerge hacia arriba en mobile sin tapar todo) */}
+    <div className={`overflow-hidden transition-all duration-500 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
+      isOpen 
+        ? "fixed inset-x-4 bottom-24 h-[45vh] rounded-2xl border z-40 md:relative md:inset-auto md:w-[380px] md:h-full md:rounded-none md:border-t-0 md:border-l" 
+        : "fixed inset-x-4 bottom-0 h-0 w-0 opacity-0 pointer-events-none md:relative md:w-0 md:h-full md:opacity-100 md:pointer-events-auto"
+    }`}>
+      <div className={`h-full p-5 overflow-y-auto transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>
+        {/* Botón rápido para cerrar la sección en celulares */}
+        <div className="flex justify-end md:hidden mb-2">
+          <button onClick={() => toggleSection(active)} className="text-slate-400 text-xs bg-white/5 px-2 py-1 rounded-md border border-white/10 active:bg-white/10">✕ Cerrar</button>
         </div>
-      </div>
-
-      {/* 🎛️ CONTENEDOR DE BOTONES (Corregido con h-20 para centrar botones verticales en móvil) */}
-      <div className="fixed bottom-0 left-0 w-full h-20 bg-[#1e293b]/95 backdrop-blur-md border-t border-white/10 flex flex-row items-center justify-start px-5 gap-4 overflow-x-auto no-scrollbar z-50 md:relative md:bottom-auto md:left-auto md:w-20 md:h-full md:flex-col md:py-10 md:gap-8 md:overflow-x-visible md:border-t-0 md:border-l">
-        
-        <button 
-          onClick={() => toggleSection("history")} 
-          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
-            active === "history" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
-          }`}
-        >
-          <History className="w-5 h-5" />
-        </button>
-        
-        <button 
-          onClick={() => toggleSection("keywords")} 
-          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
-            active === "keywords" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
-          }`}
-        >
-          <KeyRound className="w-5 h-5" />
-        </button>
-        
-        <button 
-          onClick={() => toggleSection("grammar")} 
-          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
-            active === "grammar" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
-          }`}
-        >
-          <Brain className="w-5 h-5" />
-        </button>
-        
-        <button 
-          onClick={() => toggleSection("speech")} 
-          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
-            active === "speech" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
-          }`}
-        >
-          <Volume2 className="w-5 h-5" />
-        </button>
-        
-        <button 
-          onClick={() => toggleSection("Calculos")} 
-          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border text-xl transition ${
-            active === "Calculos" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "border-white/10 bg-slate-950/40 hover:scale-110"
-          }`}
-        >
-          <Gamepad2 className="w-5 h-5 text-white" />
-        </button>
-        
-        <button 
-          onClick={handleMic} 
-          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition shadow-lg relative ${
-            micOn ? "bg-green-500 text-white animate-pulse" : "bg-red-500 text-white"
-          }`}
-        >
-          <Mic className="w-5 h-5" />
-          {micOn && <span className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />}
-        </button>
-
-        <button 
-          onClick={exportarAPDF} 
-          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border border-white/10 bg-slate-950/40 text-white hover:text-red-400 transition"
-          title="Exportar PDF"
-        >
-          <FileDown className="w-5 h-5" />
-        </button>
-
+        {renderSection()}
       </div>
     </div>
-  )};
+
+    {/* 🎛️ CONTENEDOR DE BOTONES (Fijo abajo, centrado vertical estricto e independiente) */}
+    <div className="fixed bottom-0 left-0 w-full h-20 bg-[#1e293b]/95 backdrop-blur-md border-t border-white/10 flex flex-row items-center justify-start px-5 gap-4 overflow-x-auto no-scrollbar z-50 md:relative md:bottom-auto md:left-auto md:w-20 md:h-full md:flex-col md:py-10 md:gap-8 md:overflow-x-visible md:border-t-0 md:border-l">
+      
+      <button 
+        onClick={() => toggleSection("history")} 
+        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+          active === "history" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+        }`}
+      >
+        <History className="w-5 h-5" />
+      </button>
+      
+      <button 
+        onClick={() => toggleSection("keywords")} 
+        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+          active === "keywords" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+        }`}
+      >
+        <KeyRound className="w-5 h-5" />
+      </button>
+      
+      <button 
+        onClick={() => toggleSection("grammar")} 
+        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+          active === "grammar" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+        }`}
+      >
+        <Brain className="w-5 h-5" />
+      </button>
+      
+      <button 
+        onClick={() => toggleSection("speech")} 
+        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+          active === "speech" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+        }`}
+      >
+        <Volume2 className="w-5 h-5" />
+      </button>
+      
+      <button 
+        onClick={() => toggleSection("Calculos")} 
+        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border text-xl transition ${
+          active === "Calculos" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "border-white/10 bg-slate-950/40 hover:scale-110"
+        }`}
+      >
+        <Gamepad2 className="w-5 h-5 text-white" />
+      </button>
+      
+      <button 
+        onClick={handleMic} 
+        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition shadow-lg relative ${
+          micOn ? "bg-green-500 text-white animate-pulse" : "bg-red-500 text-white"
+        }`}
+      >
+        <Mic className="w-5 h-5" />
+        {micOn && <span className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />}
+      </button>
+
+      <button 
+        onClick={exportarAPDF} 
+        className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border border-white/10 bg-slate-950/40 text-white hover:text-red-400 transition"
+        title="Exportar PDF"
+      >
+        <FileDown className="w-5 h-5" />
+      </button>
+
+    </div>
+  </div>
+)};

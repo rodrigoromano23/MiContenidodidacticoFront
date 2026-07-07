@@ -358,6 +358,7 @@ export default function Home() {
         {searched && (
           <div className="fixed bottom-0 left-0 w-full bg-slate-900/85 backdrop-blur-md border-t border-white/10 px-4 py-3 z-40 overflow-x-auto no-scrollbar flex items-center gap-5">
             {/* Llamamos a tu panel para que renderice los 7 botones reales */}
+            {searched && (
             <ButtonPanel
               searchHistory={searchHistory}
               material={results[0]}
