@@ -357,8 +357,15 @@ export default function Home() {
         {/* 🎛️ FOOTER FIJO CON SCROLL HORIZONTAL (Acá inyectaremos tu ButtonPanel Móvil) */}
         {searched && (
           <div className="fixed bottom-0 left-0 w-full bg-slate-900/85 backdrop-blur-md border-t border-white/10 px-4 py-3 z-40 overflow-x-auto no-scrollbar flex items-center gap-5">
-            {/* ESPACIO RESERVADO PARA RE-INCORPORAR TUS BOTONES REDONDOS ORIGINALES CON EL PROPIO COMPONENTE */}
-            <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 whitespace-nowrap">Deslice opciones ➔</p>
+            {/* Llamamos a tu panel para que renderice los 7 botones reales */}
+            <ButtonPanel
+              searchHistory={searchHistory}
+              material={results[0]}
+              onToggleMic={setMicEnabled}
+              seccionAbierta={seccionAbierta}
+              setSeccionAbierta={setSeccionAbierta}
+              isMobile={true}
+            />
           </div>
         )}
       </div>
