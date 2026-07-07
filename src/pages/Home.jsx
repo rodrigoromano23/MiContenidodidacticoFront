@@ -15,7 +15,6 @@ export default function Home() {
   const [aiData, setAiData] = useState(null);
   
   // Estado para controlar qué sección del panel cuadrado está expandida en Mobile
-  // Puede ser: "historial", "micro", "info", o null si todo está cerrado
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   
   // VISOR DE IMAGENES
@@ -165,6 +164,11 @@ export default function Home() {
     setSeccionAbierta(seccionAbierta === seccion ? null : seccion);
   };
 
+  // Función dummy para simular descarga de PDF o integrarla con tu librería
+  const handleDescargarPDF = () => {
+    alert("Generando y descargando PDF del material...");
+  };
+
   return (
     <div className="relative flex h-screen bg-slate-950 text-white overflow-hidden select-none">
       
@@ -253,100 +257,161 @@ export default function Home() {
               <div className="h-[2px] bg-cyan-400 max-w-[150px] mx-auto mt-2 opacity-80" />
             </div>
 
-            {/* 🎛️ PANEL BUTTON ADAPTADO A CUADRADOS (3 COLUMNAS) */}
-            <div className="max-w-sm mx-auto grid grid-cols-3 gap-3 bg-slate-900/60 p-3 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
+            {/* 🎛️ PANEL BUTTON COMPLETO (7 FUNCIONALIDADES EN RECTÁNGULOS) */}
+            <div className="max-w-sm mx-auto grid grid-cols-3 gap-2.5 bg-slate-900/60 p-3 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
               
-              {/* Botón 1: Micrófono */}
+              {/* 1. Historial */}
+              <button
+                onClick={() => toggleSeccionMobile("historial")}
+                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                  seccionAbierta === "historial" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
+                }`}
+              >
+                <span className="text-lg">⏳</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Historial</span>
+              </button>
+
+              {/* 2. Palabras Claves */}
+              <button
+                onClick={() => toggleSeccionMobile("keywords")}
+                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                  seccionAbierta === "keywords" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
+                }`}
+              >
+                <span className="text-lg">🔑</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Palabras Clave</span>
+              </button>
+
+              {/* 3. Gramática */}
+              <button
+                onClick={() => toggleSeccionMobile("gramatica")}
+                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                  seccionAbierta === "gramatica" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
+                }`}
+              >
+                <span className="text-lg">📝</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Gramática</span>
+              </button>
+
+              {/* 4. Narrador */}
+              <button
+                onClick={() => toggleSeccionMobile("narrador")}
+                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                  seccionAbierta === "narrador" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
+                }`}
+              >
+                <span className="text-lg">🗣️</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Narrador</span>
+              </button>
+
+              {/* 5. Juego (Cálculos) */}
+              <button
+                onClick={() => toggleSeccionMobile("juego")}
+                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                  seccionAbierta === "juego" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
+                }`}
+              >
+                <span className="text-lg">🎮</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Juego</span>
+              </button>
+
+              {/* 6. Micrófono */}
               <button
                 onClick={() => {
                   setMicEnabled(!micEnabled);
                   toggleSeccionMobile("micro");
                 }}
-                className={`aspect-square rounded-xl border p-2 flex flex-col items-center justify-center gap-1 text-center transition-all duration-200 ${
+                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
                   micEnabled 
-                    ? "bg-red-500/20 border-red-500 text-red-400 scale-95 shadow-lg shadow-red-500/10 font-bold" 
+                    ? "bg-red-500/20 border-red-500 text-red-400 font-bold shadow-lg shadow-red-500/10" 
                     : seccionAbierta === "micro"
                     ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold"
-                    : "bg-slate-950/80 text-slate-300 border-white/5 active:bg-cyan-500 active:text-slate-950"
+                    : "bg-slate-950/80 text-slate-300 border-white/5"
                 }`}
               >
                 <span className="text-lg">{micEnabled ? "🛑" : "🎙️"}</span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider">Voz</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Micrófono</span>
               </button>
 
-              {/* Botón 2: Historial */}
+              {/* 7. Descargar PDF */}
               <button
-                onClick={() => toggleSeccionMobile("historial")}
-                className={`aspect-square rounded-xl border p-2 flex flex-col items-center justify-center gap-1 text-center transition-all duration-200 ${
-                  seccionAbierta === "historial"
-                    ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold"
-                    : "bg-slate-950/80 text-slate-300 border-white/5 active:bg-cyan-500 active:text-slate-950"
+                onClick={() => {
+                  toggleSeccionMobile("pdf");
+                  handleDescargarPDF();
+                }}
+                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                  seccionAbierta === "pdf" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
                 }`}
               >
-                <span className="text-lg">⏳</span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider">Historial</span>
-              </button>
-
-              {/* Botón 3: Info / Docente */}
-              <button
-                onClick={() => toggleSeccionMobile("info")}
-                className={`aspect-square rounded-xl border p-2 flex flex-col items-center justify-center gap-1 text-center transition-all duration-200 ${
-                  seccionAbierta === "info"
-                    ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold"
-                    : "bg-slate-950/80 text-slate-300 border-white/5 active:bg-cyan-500 active:text-slate-950"
-                }`}
-              >
-                <span className="text-lg">👨‍🏫</span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider">Docente</span>
+                <span className="text-lg">📄</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">PDF</span>
               </button>
 
             </div>
 
-            {/* DESPLIEGUE DINÁMICO DE CONTENIDO (ACORDEÓN DEL PANEL REAL) */}
+            {/* 📥 CONTENEDORES DESPLEGABLES ASOCIADOS A CADA BOTÓN */}
             <div className="max-w-sm mx-auto w-full">
-              {seccionAbierta === "micro" && (
-                <div className="bg-slate-900/90 border border-red-500/30 p-4 rounded-xl animate-fadeIn shadow-xl backdrop-blur-md text-xs text-center space-y-1">
-                  <p className="text-red-400 font-bold font-mono text-[10px] uppercase tracking-wider">Asistente de Voz Activo</p>
-                  <p className="text-slate-300">Decí <strong className="text-white">"Buscar [tema]"</strong> o <strong className="text-white">"Cerrar panel"</strong> para controlar la app con comandos de voz nativos.</p>
-                </div>
-              )}
-
+              
               {seccionAbierta === "historial" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl backdrop-blur-md text-xs space-y-2">
-                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Últimas Búsquedas</p>
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-2">
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Búsquedas Recientes</p>
                   {searchHistory.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {searchHistory.map((h, idx) => (
-                        <span 
-                          key={idx} 
-                          onClick={() => {
-                            setQuery(h);
-                            handleSearch(h);
-                          }}
-                          className="bg-slate-950 text-cyan-400/90 px-2.5 py-1 rounded-md border border-white/5 active:bg-cyan-500 active:text-slate-950 text-[11px] font-medium transition cursor-pointer"
-                        >
-                          {h}
-                        </span>
+                        <span key={idx} onClick={() => { setQuery(h); handleSearch(h); }} className="bg-slate-950 text-cyan-400 px-2.5 py-1 rounded border border-white/5 text-[11px] font-medium cursor-pointer">{h}</span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-slate-500 text-center py-1">No hay búsquedas recientes.</p>
+                    <p className="text-slate-500 text-center py-1">Historial vacío.</p>
                   )}
                 </div>
               )}
 
-              {seccionAbierta === "info" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl backdrop-blur-md text-xs space-y-1.5">
-                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Metadatos del Material</p>
-                  <div className="text-slate-300 space-y-1 pt-0.5">
-                    <p>👨‍🏫 <strong>Docente:</strong> {results[0].docente || "No especificado"}</p>
-                    <p>📂 <strong>Imágenes en la nube:</strong> {getImagesArray(results[0]).length} archivos</p>
-                  </div>
+              {seccionAbierta === "keywords" && (
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1">
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Palabras Clave del Tema</p>
+                  <p className="text-slate-300 pt-1">Aquí van las palabras clave extraídas automáticamente de: <span className="text-white italic">"{results[0].titulo}"</span>.</p>
                 </div>
               )}
+
+              {seccionAbierta === "gramatica" && (
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1">
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Análisis Gramatical</p>
+                  <p className="text-slate-300 pt-1">Módulo interactivo para analizar las estructuras sintácticas y tiempos verbales del texto actual.</p>
+                </div>
+              )}
+
+              {seccionAbierta === "narrador" && (
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-2">
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Texto a Voz (TTS)</p>
+                  <button className="bg-cyan-500 text-slate-950 font-bold px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider shadow-md">▶️ Escuchar Contenido</button>
+                </div>
+              )}
+
+              {seccionAbierta === "juego" && (
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1.5">
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Desafío Matemático (Cálculos)</p>
+                  <p className="text-slate-300">¡Hora de agilizar la mente! Resolvé el siguiente cálculo basado en el contenido didáctico.</p>
+                </div>
+              )}
+
+              {seccionAbierta === "micro" && (
+                <div className="bg-slate-900/90 border border-red-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-1">
+                  <p className="text-red-400 font-bold font-mono text-[10px] uppercase tracking-wider">Asistente por Voz</p>
+                  <p className="text-slate-300">Micrófono {micEnabled ? "ACTIVADO" : "DESACTIVADO"}. Comandos de control listos para escuchar.</p>
+                </div>
+              )}
+
+              {seccionAbierta === "pdf" && (
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-1">
+                  <p className="text-emerald-400 font-bold font-mono text-[10px] uppercase tracking-wider">Documento Exportado</p>
+                  <p className="text-slate-300">El PDF se ha estructurado con éxito para su lectura offline.</p>
+                </div>
+              )}
+
             </div>
 
-            {/* CONTENIDO PRINCIPAL CON EFECTO ESCRITURA */}
+            {/* CAJA PRINCIPAL DE CONTENIDO */}
             <div className="w-full bg-slate-950/60 backdrop-blur-md border border-white/10 p-5 rounded-2xl shadow-xl">
               <div className="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap font-sans">
                 <TypeWriter text={results[0].contenido} />
@@ -359,14 +424,8 @@ export default function Home() {
                 <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">Imágenes Adjuntas</p>
                 <div className="grid grid-cols-1 gap-3">
                   {getImagesArray(results[0]).slice(0, 4).map((imgUrl, index) => (
-                    <div 
-                      key={index} 
-                      onClick={() => setSelectedImage(imgUrl)}
-                      className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg"
-                    >
-                      <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 shadow-md">
-                        {index + 1}
-                      </div>
+                    <div key={index} onClick={() => setSelectedImage(imgUrl)} className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                      <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10">{index + 1}</div>
                       <img src={imgUrl} alt={`Móvil ${index + 1}`} className="w-full h-full object-cover" />
                     </div>
                   ))}
@@ -417,10 +476,6 @@ export default function Home() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             </div>
           )}
-
-          {!loading && searched && results.length === 0 && (
-            <p className="text-center text-gray-400 mt-4">No se encontraron resultados de la búsqueda...</p>
-          )}
         </div>
 
         {searched && results.length > 0 && (
@@ -446,14 +501,8 @@ export default function Home() {
                     <p className="text-xs text-sky-300 mb-2 font-semibold uppercase tracking-widest">Imágenes Adjuntas</p>
                     <div className="grid grid-cols-4 gap-4">
                       {getImagesArray(item).slice(0, 4).map((imgUrl, index) => (
-                        <div 
-                          key={index} 
-                          onClick={() => setSelectedImage(imgUrl)}
-                          className="group relative aspect-[16/10] bg-black/40 rounded-lg overflow-hidden border border-white/10 shadow-md cursor-pointer hover:scale-[1.02] hover:border-sky-400 transition-all duration-300"
-                        >
-                          <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg select-none">
-                            {index + 1}
-                          </div>
+                        <div key={index} onClick={() => setSelectedImage(imgUrl)} className="group relative aspect-[16/10] bg-black/40 rounded-lg overflow-hidden border border-white/10 shadow-md cursor-pointer hover:scale-[1.02] hover:border-sky-400 transition-all duration-300">
+                          <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">{index + 1}</div>
                           <img src={imgUrl} alt={`Galería ${index + 1}`} className="w-full h-full object-cover" />
                         </div>
                       ))}
@@ -480,25 +529,10 @@ export default function Home() {
 
       {/* VISOR GLOBAL DE IMÁGENES */}
       {selectedImage && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
-          onClick={() => setSelectedImage(null)}
-        >
-          <button 
-            className="absolute top-6 right-6 text-white text-4xl font-light hover:text-sky-400 transition"
-            onClick={() => setSelectedImage(null)}
-          >
-            ✕
-          </button>
-          <div 
-            className="max-w-[90vw] max-h-[85vh] flex items-center justify-center p-2 bg-white/5 border border-white/10 shadow-2xl rounded-sm"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img 
-              src={selectedImage} 
-              alt="Visualización ampliada" 
-              className="max-w-full max-h-[80vh] object-contain shadow-2xl"
-            />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md" onClick={() => setSelectedImage(null)}>
+          <button className="absolute top-6 right-6 text-white text-4xl font-light hover:text-sky-400 transition" onClick={() => setSelectedImage(null)}>✕</button>
+          <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center p-2 bg-white/5 border border-white/10 shadow-2xl rounded-sm" onClick={(e) => e.stopPropagation()}>
+            <img src={selectedImage} alt="Visualización ampliada" className="max-w-full max-h-[80vh] object-contain shadow-2xl" />
           </div>
         </div>
       )}
