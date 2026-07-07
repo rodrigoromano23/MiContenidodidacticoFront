@@ -11,7 +11,7 @@ const SECTIONS = {
   keywords: "Palabras clave",
   grammar: "Gramática",
   speech: "Narrador",
-  Calculos: "Juego (Cálculos)"
+  dictionary: "Diccionario",
 };
 
 export default function ButtonPanel({
@@ -42,29 +42,30 @@ export default function ButtonPanel({
     console.log(`🎙️ Comando ejecutado: ${mensaje}`);
   };
 
-  const lanzarNotificacion = (mensaje, icon = "success") => {
-    Swal.fire({
-      toast: true,
-      position: "top-end",
-      icon: icon,
-      title: mensaje,
-      showConfirmButton: false,
-      timer: 1800,
-      timerProgressBar: true,
-      background: "#0f172a",
-      color: "#fff",
-      iconColor: "#22d3ee", // Cyan combinado con tu UI
-      didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer);
-        toast.addEventListener('mouseleave', Swal.resumeTimer);
-      }
-    });
-  };
-
   const procesarComandoVozGlobal = (frase) => {
-    // 🎯 LIMPIEZA INICIAL
+    // 🎯 LIMPIEZA INICIAL: Volamos absolutamente todos los puntos y comas molestos
     const fraseLimpia = frase.replace(/[\.,]+/g, "").trim();
     console.log("Procesando frase limpia en Panel:", fraseLimpia);
+
+    // 🔔 NUEVA: Función interna para lanzar las notificaciones visuales elegantes (Toast)
+    const lanzarNotificacion = (mensaje, icon = "success") => {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: icon,
+        title: mensaje,
+        showConfirmButton: false,
+        timer: 1800,
+        timerProgressBar: true,
+        background: "#0f172a",
+        color: "#fff",
+        iconColor: "#22d3ee", // Cyan combinado con tu UI
+        didOpen: (toast) => {
+          // Evita que cierres accidentales de otros componentes oculten el Toast
+          toast.addEventListener('mouseenter', Swal.stopTimer);
+          toast.addEventListener('mouseleave', Swal.resumeTimer);}
+      });
+    };
 
     // 📄 1. CONTROL DE DESCARGA DE PDF POR VOZ
     const comandosPDF = ["descargar pdf", "exportar pdf", "guardar pdf", "bajar pdf"];
@@ -76,12 +77,13 @@ export default function ButtonPanel({
     // 🔍 2. CONTROL DE BUSCADOR DE TÍTULOS EXTERNO (HOME)
     if (fraseLimpia.startsWith("buscar ") || fraseLimpia.startsWith("filtrar ")) {
       let terminoBusqueda = fraseLimpia.replace(/^(buscar|filtrar)\s+/, "").trim();
+      
       window.dispatchEvent(new CustomEvent("voz-buscar-titulo", { detail: terminoBusqueda }));
       notificarComando(`Buscando: "${terminoBusqueda}"`);
       return;
     }
 
-    // 🖼️ 3. CONTROL DEL VISOR DE IMÁGENES
+    // 🖼️ 3. CONTROL DEL VISOR DE IMÁGENES EN GRANDE (Utiliza los números expuestos por el Hover)
     const abrirVisorKeywords = ["galería", "galeria", "ampliar", "expandir", "ver fotos", "ver imagenes", "ver imágenes", "abrir imagen", "abrir foto", "abrir la imagen"];
     const cerrarVisorKeywords = ["cerrar", "quitar", "ocultar foto", "ocultar galería", "salir de la imagen", "cerrar imagen"];
 
@@ -124,42 +126,54 @@ export default function ButtonPanel({
       return;
     }
 
-    // 🖼️ 4. CONTROL DE SCROLL DE IMÁGENES
+    // 🖼️ 4. CONTROL DE SCROLL DE IMÁGENES ABAJO DEL CONTENIDO
     if (fraseLimpia.includes("bajar a") || fraseLimpia.includes("ir a las fotos") || fraseLimpia.includes("desplazar a")) {
       window.dispatchEvent(new CustomEvent("comando-hacer-scroll-imagenes"));
       notificarComando("Desplazando a las imágenes");
       return;
     } 
-
-    // 🎛️ 5. COMANDO GENERAL PARA CERRAR CUALQUIER PANEL
-    const comandosCerrarPanel = ["cerrar panel", "ocultar panel", "cerrar menú", "cerrar menu", "ocultar menú", "quitar panel", "salir del panel", "cerrar pestaña", "cerrar pestana"];
+    // 🎛️ 5. NUEVO: COMANDO GENERAL PARA CERRAR CUALQUIER PANEL BLINDADO
+    const comandosCerrarPanel = ["cerrar panel", "ocultar panel", "cerrar menú", "cerrar menu", "ocultar menú", "quitar panel", "salir del panel"];
     if (comandosCerrarPanel.some(keyword => fraseLimpia === keyword || fraseLimpia.includes(keyword))) {
       setActive(null);
       lanzarNotificacion("Panel cerrado", "info");
       return;
     }
 
-    // 🎛️ 6. MANIPULACIÓN LOCAL DEL PANEL LATERAL (APERTURAS)
+    // 🎛️ 6. MANIPULACIÓN LOCAL DEL PANEL LATERAL (BOTONES)
+
+    const palabrasCierre = ["cerrar", "ocultar", "quitar", "salir"];
+    const palabrasObjetivo = ["panel", "menú", "menu", "pestaña", "pestana", "lateral"];
+
+    const quiereCerrarPanel = palabrasCierre.some(c => fraseLimpia.includes(c)) && 
+                           palabrasObjetivo.some(o => fraseLimpia.includes(o));
+
+    if (quiereCerrarPanel) {
+      setActive(null); // Resetea el estado a null, lo que contrae el panel por completo
+      lanzarNotificacion("Panel cerrado", "info");
+      return; // Fin de la función
+    }
     if (fraseLimpia.includes("historial") || fraseLimpia.includes("abrir historial")) {
       setActive("history");
-      lanzarNotificacion("Mostrando Historial", "success");
+      notificarComando("Mostrando Historial");
     } 
-    else if (fraseLimpia.includes("palabras clave") || fraseLimpia.includes("ver palabras") || fraseLimpia.includes("palabras claves")) {
+    else if (fraseLimpia.includes("palabras clave") || fraseLimpia.includes("ver palabras")) {
       setActive("keywords");
-      lanzarNotificacion("Mostrando Palabras Clave", "success");
+      notificarComando("Mostrando Palabras Clave");
     } 
-    else if (fraseLimpia.includes("gramática") || fraseLimpia.includes("ver gramática") || fraseLimpia.includes("gramatica")) {
+    else if (fraseLimpia.includes("gramática") || fraseLimpia.includes("ver gramática")) {
       setActive("grammar");
-      lanzarNotificacion("Análisis Gramatical", "success");
+      notificarComando("Análisis Gramatical");
     } 
     else if (fraseLimpia.includes("narrador") || fraseLimpia.includes("abrir narrador")) {
       setActive("speech");
-      lanzarNotificacion("Panel del Narrador", "success");
+      notificarComando("Panel del Narrador");
     } 
-    else if (fraseLimpia.includes("juego") || fraseLimpia.includes("cálculos") || fraseLimpia.includes("calculos")) {
+    else if (fraseLimpia.includes("juego") || fraseLimpia.includes("cálculos")) {
       setActive("Calculos");
-      lanzarNotificacion("Abriendo juego", "success");
+      notificarComando("Abriendo juego");
     } 
+    
   };
 
   // Mantenemos la referencia siempre al día con los últimos estados
@@ -185,6 +199,7 @@ export default function ButtonPanel({
       const frase = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
       console.log("Asistente de voz entendió:", frase);
       
+      // Llamamos a través de la referencia para evitar cierres de entorno léxico viejos
       if (procesarComandoRef.current) {
         procesarComandoRef.current(frase);
       }
@@ -202,7 +217,9 @@ export default function ButtonPanel({
           try { 
             recognition.start(); 
             console.log("🎙️ Micrófono reconectado automáticamente.");
-          } catch (e) {}
+          } catch (e) {
+            // Ignoramos re-intentos si ya está corriendo
+          }
         }, 300);
       }
     };
@@ -346,47 +363,36 @@ export default function ButtonPanel({
       case "history":
         return (
           <>
-            <h2 className="text-white text-xl mb-4 font-bold border-b border-white/10 pb-2">{SECTIONS.history}</h2>
-            <div className="space-y-2">
-              {searchHistory.length > 0 ? (
-                searchHistory.map((item, i) => (
-                  <div key={i} className="text-gray-300 bg-white/5 p-3 rounded-xl border border-white/5 text-sm">{item}</div>
-                ))
-              ) : (
-                <p className="text-slate-500 text-sm italic">Sin búsquedas recientes.</p>
-              )}
-            </div>
+            <h2 className="text-white text-xl mb-4">{SECTIONS.history}</h2>
+            {searchHistory.map((item, i) => (
+              <div key={i} className="text-gray-300 bg-white/5 p-2 rounded mb-2">{item}</div>
+            ))}
           </>
         );
       case "keywords":
         return (
           <>
-            <h2 className="text-white text-xl mb-4 font-bold border-b border-white/10 pb-2">{SECTIONS.keywords}</h2>
+            <h2 className="text-white text-xl mb-4">{SECTIONS.keywords}</h2>
             <div className="flex flex-wrap gap-2">
-              {(grammar?.sustantivos || []).length > 0 ? (
-                (grammar.sustantivos).map((p, i) => (
-                  <span key={i} className="bg-cyan-500/20 text-cyan-300 px-2.5 py-1 rounded-lg text-xs font-medium border border-cyan-500/30">{p}</span>
-                ))
-              ) : (
-                <p className="text-slate-500 text-sm italic">No se han extraído palabras clave.</p>
-              )}
+              {(grammar?.sustantivos || []).map((p, i) => (
+                <span key={i} className="bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded">{p}</span>
+              ))}
             </div>
           </>
         );
       case "grammar":
         return (
           <div className="space-y-6 text-white">
-            <h2 className="text-white text-xl mb-2 font-bold border-b border-white/10 pb-2">{SECTIONS.grammar}</h2>
-            <div><h3 className="text-cyan-400 font-semibold mb-1 text-sm uppercase tracking-wider">Sustantivos</h3><TypeWriter text={grammar?.panel?.sustantivos || "Cargando análisis..."} speed={10} /></div>
-            <div><h3 className="text-green-400 font-semibold mb-1 text-sm uppercase tracking-wider">Verbos</h3><TypeWriter text={grammar?.panel?.verbos || "Cargando análisis..."} speed={10} /></div>
-            <div><h3 className="text-pink-400 font-semibold mb-1 text-sm uppercase tracking-wider">Adjetivos</h3><TypeWriter text={grammar?.panel?.adjetivos || "Cargando análisis..."} speed={10} /></div>
+            <div><h3 className="text-cyan-400 mb-2">Sustantivos</h3><TypeWriter text={grammar?.panel?.sustantivos || ""} speed={10} /></div>
+            <div><h3 className="text-green-400 mb-2">Verbos</h3><TypeWriter text={grammar?.panel?.verbos || ""} speed={10} /></div>
+            <div><h3 className="text-pink-400 mb-2">Adjetivos</h3><TypeWriter text={grammar?.panel?.adjetivos || ""} speed={10} /></div>
           </div>
         );
       case "speech":
         return (
           <div className="space-y-6 text-white">
-            <h2 className="text-xl font-bold flex items-center gap-2 border-b border-white/10 pb-2"><Volume2 className="text-purple-400" /> {SECTIONS.speech}</h2>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 shadow-xl">
+            <h2 className="text-xl flex items-center gap-2"><Volume2 className="text-purple-400" /> Narrador</h2>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
               <div className="flex justify-center py-3">
                 <button
                   onClick={() => {
@@ -398,107 +404,52 @@ export default function ButtonPanel({
                     clearInterval(intervalRefAudio.current);
                     intervalRefAudio.current = setInterval(() => { i++; setProgress(Math.min((i / total) * 100, 100)); }, 100);
                   }}
-                  className="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-400 flex items-center justify-center shadow-lg hover:scale-105 transition transform"
+                  className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-400 flex items-center justify-center shadow-lg"
                 >
-                  <Play className="w-7 h-7 text-white ml-1" />
+                  <Play className="w-8 h-8 text-white ml-1" />
                 </button>
               </div>
-              <div className="flex justify-center gap-6 text-slate-400 border-t border-white/5 pt-3">
-                <button className="hover:text-white transition" onClick={() => { pause(); setIsSpeaking(false); }}><Pause className="w-5 h-5" /></button>
-                <button className="hover:text-white transition" onClick={() => { resume(); setIsSpeaking(true); }}><Play className="w-5 h-5" /></button>
-                <button className="hover:text-red-400 transition" onClick={() => { stop(); setIsSpeaking(false); setProgress(0); }}><Square className="w-5 h-5" /></button>
+              <div className="flex justify-center gap-6 text-slate-400">
+                <button onClick={() => { pause(); setIsSpeaking(false); }}><Pause /></button>
+                <button onClick={() => { resume(); setIsSpeaking(true); }}><Play /></button>
+                <button onClick={() => { stop(); setIsSpeaking(false); setProgress(0); }}><Square /></button>
               </div>
-              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
-                <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300" style={{ width: `${progress}%` }} />
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all" style={{ width: `${progress}%` }} />
               </div>
             </div>
           </div>
         );
-      case "Calculos": 
-        return (
-          <div className="text-white animate-fadeIn">
-            <h2 className="text-white text-xl mb-4 font-bold border-b border-white/10 pb-2">{SECTIONS.Calculos}</h2>
-            <CalcGame />
-          </div>
-        );
+      case "Calculos": return <CalcGame />;
       default: return null;
     }
   };
 
   return (
     <div className="flex h-screen overflow-visible">
-      {/* Contenedor dinámico del contenido de la pestaña */}
-      <div className={`border-l border-white/10 overflow-hidden transition-all duration-500 bg-slate-950/40 backdrop-blur-xl ${isOpen ? "w-[380px]" : "w-0"}`}>
-        <div className={`h-full p-6 overflow-y-auto text-scroll transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>{renderSection()}</div>
+      <div className={`border-l border-white/10 overflow-hidden transition-all duration-500 bg-slate-950/20 backdrop-blur-xl ${isOpen ? "w-[380px]" : "w-0"}`}>
+        <div className={`h-full p-6 overflow-y-auto transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>{renderSection()}</div>
       </div>
-
-      {/* Barra de Íconos Vertical Fija */}
-      <div className="w-20 bg-slate-900/60 backdrop-blur-md border-l border-white/10 flex flex-col items-center py-10 justify-between h-full z-10">
+      <div className="w-20 bg-slate-900/40 backdrop-blur-md border-l border-white/10 flex flex-col items-center py-10 gap-8 h-full z-10">
+        <button onClick={() => toggleSection("history")} className="text-white hover:text-cyan-400 transition"><History /></button>
+        <button onClick={() => toggleSection("keywords")} className="text-white hover:text-cyan-400 transition"><KeyRound /></button>
+        <button onClick={() => toggleSection("grammar")} className="text-white hover:text-cyan-400 transition"><Brain /></button>
+        <button onClick={() => toggleSection("speech")} className="text-white hover:text-cyan-400 transition"><Volume2 /></button>
+        <button onClick={() => toggleSection("Calculos")} className="text-2xl hover:scale-110 transition">📖</button>
         
-        {/* Bloque superior de botones */}
-        <div className="flex flex-col items-center gap-7 w-full">
-          <button 
-            onClick={() => toggleSection("history")} 
-            className={`transition p-2 rounded-xl ${active === "history" ? "text-cyan-400 bg-white/5" : "text-slate-400 hover:text-white"}`}
-            title="Historial"
-          >
-            <History className="w-5 h-5" />
-          </button>
-          
-          <button 
-            onClick={() => toggleSection("keywords")} 
-            className={`transition p-2 rounded-xl ${active === "keywords" ? "text-cyan-400 bg-white/5" : "text-slate-400 hover:text-white"}`}
-            title="Palabras clave"
-          >
-            <KeyRound className="w-5 h-5" />
-          </button>
-          
-          <button 
-            onClick={() => toggleSection("grammar")} 
-            className={`transition p-2 rounded-xl ${active === "grammar" ? "text-cyan-400 bg-white/5" : "text-slate-400 hover:text-white"}`}
-            title="Gramática"
-          >
-            <Brain className="w-5 h-5" />
-          </button>
-          
-          <button 
-            onClick={() => toggleSection("speech")} 
-            className={`transition p-2 rounded-xl ${active === "speech" ? "text-cyan-400 bg-white/5" : "text-slate-400 hover:text-white"}`}
-            title="Narrador"
-          >
-            <Volume2 className="w-5 h-5" />
-          </button>
-          
-          <button 
-            onClick={() => toggleSection("Calculos")} 
-            className={`text-xl p-1.5 rounded-xl transition ${active === "Calculos" ? "bg-white/5 scale-110" : "opacity-60 hover:opacity-100 hover:scale-110"}`}
-            title="Juego de Cálculos"
-          >
-            🎮
-          </button>
-        </div>
-        
-        {/* Bloque inferior (Micrófono y PDF) */}
-        <div className="flex flex-col items-center gap-6 w-full">
-          <button 
-            onClick={handleMic} 
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition shadow-lg relative ${micOn ? "bg-green-500 text-white animate-pulse" : "bg-red-500/80 hover:bg-red-500 text-white"}`}
-            title={micOn ? "Desactivar Micrófono" : "Activar Micrófono"}
-          >
-            <Mic className="w-5 h-5" />
-            {micOn && <span className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />}
-          </button>
+        <button onClick={handleMic} className={`w-12 h-12 rounded-full flex items-center justify-center transition shadow-lg relative ${micOn ? "bg-green-500 text-white animate-pulse" : "bg-red-500 text-white"}`}>
+          <Mic />
+          {micOn && <span className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />}
+        </button>
 
-          <button 
-            onClick={exportarAPDF} 
-            className="text-slate-400 hover:text-red-400 transition flex flex-col items-center gap-1 group"
-            title="Exportar PDF"
-          >
-            <FileDown className="w-5 h-5 group-hover:scale-105 transition" />
-            <span className="text-[9px] font-medium tracking-wider text-slate-500 group-hover:text-slate-300">PDF</span>
-          </button>
-        </div>
-
+        <button 
+          onClick={exportarAPDF} 
+          className="text-white hover:text-red-400 transition mt-2 flex flex-col items-center gap-1"
+          title="Exportar PDF"
+        >
+          <FileDown className="w-6 h-6" />
+          <span className="text-[10px] text-gray-400">PDF</span>
+        </button>
       </div>
     </div>
   );
