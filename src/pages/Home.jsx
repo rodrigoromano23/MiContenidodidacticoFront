@@ -463,6 +463,8 @@ export default function Home() {
           seccionAbierta={seccionAbierta}
           setSeccionAbierta={setSeccionAbierta}
           isMobile={true}
+          calcLevel={calcLevel}       
+          setCalcLevel={setCalcLevel} 
         />
       </div>
     )}
