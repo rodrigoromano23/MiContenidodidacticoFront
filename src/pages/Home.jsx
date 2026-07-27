@@ -17,7 +17,7 @@ export default function Home() {
   // Estado para controlar qué sección del panel cuadrado está expandida en Mobile
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   
-  // VISOR DE IMANES
+  // VISOR DE IMAGENES
   const [selectedImage, setSelectedImage] = useState(null);
   
   const cleanUrl = (url) => {
@@ -332,13 +332,13 @@ export default function Home() {
             </div>
           </div>
 
-          {/* IMÁGENES ABAJO DEL CONTENIDO */}
+          {/* IMÁGENES ABAJO DEL CONTENIDO (SIN LIMITAR A 4) */}
           {getImagesArray(results[0]).length > 0 && (
             <div className="space-y-2">
               <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">Imágenes Adjuntas</p>
-              <div className="grid grid-cols-1 gap-3">
-                {getImagesArray(results[0]).slice(0, 4).map((imgUrl, index) => (
-                  <div key={index} onClick={() => setSelectedImage(imgUrl)} className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg">
+              <div className="grid grid-cols-2 gap-3">
+                {getImagesArray(results[0]).map((imgUrl, index) => (
+                  <div key={index} onClick={() => setSelectedImage(imgUrl)} className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg cursor-pointer">
                     <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10">{index + 1}</div>
                     <img src={imgUrl} alt={`Móvil ${index + 1}`} className="w-full h-full object-cover" />
                   </div>
@@ -406,17 +406,19 @@ export default function Home() {
                 <div className="h-[2px] bg-white mt-3 opacity-90 animate-loading-line origin-left" />
               </div>
 
-              <div className="w-full flex-1 bg-sky-500/10 backdrop-blur-md border border-sky-400/20 rounded-none p-6 shadow-2xl overflow-y-auto text-scroll my-4 max-h-[44vh]">
+              {/* CAJA DE TEXTO MÁS ALTA (aumentada a max-h-[60vh]) */}
+              <div className="w-full flex-1 bg-sky-500/10 backdrop-blur-md border border-sky-400/20 rounded-none p-6 shadow-2xl overflow-y-auto text-scroll my-4 max-h-[60vh]">
                 <div className="text-gray-100 leading-9 whitespace-pre-wrap pr-2" style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: "20px" }}>
                   <TypeWriter text={item.contenido} />
                 </div>
               </div>
 
+              {/* GRILLA DE IMÁGENES COMPLETA (4 Por Fila) */}
               {getImagesArray(item).length > 0 && (
                 <div className="w-full mb-2 flex-shrink-0">
                   <p className="text-xs text-sky-300 mb-2 font-semibold uppercase tracking-widest">Imágenes Adjuntas</p>
-                  <div className="grid grid-cols-4 gap-4">
-                    {getImagesArray(item).slice(0, 4).map((imgUrl, index) => (
+                  <div className="grid grid-cols-4 gap-4 max-h-[220px] overflow-y-auto text-scroll pr-1">
+                    {getImagesArray(item).map((imgUrl, index) => (
                       <div key={index} onClick={() => setSelectedImage(imgUrl)} className="group relative aspect-[16/10] bg-black/40 rounded-lg overflow-hidden border border-white/10 shadow-md cursor-pointer hover:scale-[1.02] hover:border-sky-400 transition-all duration-300">
                         <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">{index + 1}</div>
                         <img src={imgUrl} alt={`Galería ${index + 1}`} className="w-full h-full object-cover" />
@@ -463,7 +465,6 @@ export default function Home() {
           seccionAbierta={seccionAbierta}
           setSeccionAbierta={setSeccionAbierta}
           isMobile={true}
-           
         />
       </div>
     )}
