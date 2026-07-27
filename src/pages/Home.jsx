@@ -17,7 +17,7 @@ export default function Home() {
   // Estado para controlar qué sección del panel cuadrado está expandida en Mobile
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   
-  // VISOR DE IMANES
+  // VISOR DE IMÁGENES
   const [selectedImage, setSelectedImage] = useState(null);
   
   const cleanUrl = (url) => {
@@ -65,7 +65,7 @@ export default function Home() {
     } catch (error) {
       console.error(error);
       setResults([]);
-    } finally {
+    } fontally {
       setLoading(false);
     }
   };
@@ -159,16 +159,6 @@ export default function Home() {
     return <Loader />;
   }
 
-  // Alternar acordeón móvil
-  const toggleSeccionMobile = (seccion) => {
-    setSeccionAbierta(seccionAbierta === seccion ? null : seccion);
-  };
-
-  // Función dummy para simular descarga de PDF o integrarla con tu librería
-  const handleDescargarPDF = () => {
-    alert("Generando y descargando PDF del material...");
-  };
-
   return (
   <div className="relative flex h-[100dvh] w-full bg-slate-950 text-white overflow-hidden select-none">
     
@@ -255,7 +245,7 @@ export default function Home() {
 
       {/* Bloque principal móvil con scroll */}
       {searched && results.length > 0 && (
-        <div className="w-full flex-1 overflow-y-auto px-4 pt-24 pb-24 space-y-6">
+        <div className="w-full flex-1 overflow-y-auto px-4 pt-24 pb-24 space-y-6 text-scroll">
           
           {/* Título Dinámico Principal */}
           <div className="text-center pt-2">
@@ -265,7 +255,7 @@ export default function Home() {
             <div className="h-[2px] bg-cyan-400 max-w-[150px] mx-auto mt-2 opacity-80" />
           </div>
 
-          {/* 📥 CONTENEDORES DESPLEGABLES ANTIGUOS (Mantenidos por consistencia) */}
+          {/* CONTENEDORES DESPLEGABLES */}
           <div className="max-w-sm mx-auto w-full">
             {seccionAbierta === "historial" && (
               <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-2 mb-4">
@@ -281,48 +271,6 @@ export default function Home() {
                 )}
               </div>
             )}
-
-            {seccionAbierta === "keywords" && (
-              <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-1 mb-4">
-                <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Palabras Clave del Tema</p>
-                <p className="text-slate-300 pt-1">Aquí van las palabras clave extraídas automáticamente de: <span className="text-white italic">"{results[0].titulo}"</span>.</p>
-              </div>
-            )}
-
-            {seccionAbierta === "gramatica" && (
-              <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-1 mb-4">
-                <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Análisis Gramatical</p>
-                <p className="text-slate-300 pt-1">Módulo interactivo para analizar las estructuras sintácticas y tiempos verbales del texto actual.</p>
-              </div>
-            )}
-
-            {seccionAbierta === "narrador" && (
-              <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs text-center space-y-2 mb-4">
-                <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Texto a Voz (TTS)</p>
-                <button className="bg-cyan-500 text-slate-950 font-bold px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider shadow-md">▶️ Escuchar Contenido</button>
-              </div>
-            )}
-
-            {seccionAbierta === "juego" && (
-              <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-1.5 mb-4">
-                <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Desafío Matemático (Cálculos)</p>
-                <p className="text-slate-300">¡Hora de agilizar la mente! Resolvé el siguiente cálculo basado en el contenido didáctico.</p>
-              </div>
-            )}
-
-            {seccionAbierta === "micro" && (
-              <div className="bg-slate-900/90 border border-red-500/30 p-4 rounded-xl shadow-xl text-xs text-center space-y-1 mb-4">
-                <p className="text-red-400 font-bold font-mono text-[10px] uppercase tracking-wider">Asistente por Voz</p>
-                <p className="text-slate-300">Micrófono {micEnabled ? "ACTIVADO" : "DESACTIVADO"}. Comandos de control listos para escuchar.</p>
-              </div>
-            )}
-
-            {seccionAbierta === "pdf" && (
-              <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs text-center space-y-1 mb-4">
-                <p className="text-emerald-400 font-bold font-mono text-[10px] uppercase tracking-wider">Documento Exportado</p>
-                <p className="text-slate-300">El PDF se ha estructurado con éxito para su lectura offline.</p>
-              </div>
-            )}
           </div>
 
           {/* CAJA PRINCIPAL DE CONTENIDO */}
@@ -332,13 +280,13 @@ export default function Home() {
             </div>
           </div>
 
-          {/* IMÁGENES ABAJO DEL CONTENIDO */}
+          {/* IMÁGENES ABAJO DEL CONTENIDO (SIN LÍMITE DE 4) */}
           {getImagesArray(results[0]).length > 0 && (
             <div className="space-y-2">
               <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">Imágenes Adjuntas</p>
-              <div className="grid grid-cols-1 gap-3">
-                {getImagesArray(results[0]).slice(0, 4).map((imgUrl, index) => (
-                  <div key={index} onClick={() => setSelectedImage(imgUrl)} className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg">
+              <div className="grid grid-cols-2 gap-3">
+                {getImagesArray(results[0]).map((imgUrl, index) => (
+                  <div key={index} onClick={() => setSelectedImage(imgUrl)} className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg cursor-pointer">
                     <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10">{index + 1}</div>
                     <img src={imgUrl} alt={`Móvil ${index + 1}`} className="w-full h-full object-cover" />
                   </div>
@@ -354,8 +302,7 @@ export default function Home() {
         <p className="text-center text-xs text-slate-400 mt-20">No se encontraron resultados disponibles.</p>
       )}
 
-    </div> {/* <-- FIN INTERFAZ MÓVIL */}
-
+    </div>
 
     {/* ========================================== */}
     {/* 🖥️ INTERFAZ EXCLUSIVA PARA ESCRITORIO (MD Y SUPERIOR) */}
@@ -406,17 +353,19 @@ export default function Home() {
                 <div className="h-[2px] bg-white mt-3 opacity-90 animate-loading-line origin-left" />
               </div>
 
-              <div className="w-full flex-1 bg-sky-500/10 backdrop-blur-md border border-sky-400/20 rounded-none p-6 shadow-2xl overflow-y-auto text-scroll my-4 max-h-[44vh]">
+              {/* CAJA MÁS ALTA PARA MÁS TEXTO (max-h-[62vh]) */}
+              <div className="w-full flex-1 bg-sky-500/10 backdrop-blur-md border border-sky-400/20 rounded-none p-6 shadow-2xl overflow-y-auto text-scroll my-3 max-h-[62vh]">
                 <div className="text-gray-100 leading-9 whitespace-pre-wrap pr-2" style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: "20px" }}>
                   <TypeWriter text={item.contenido} />
                 </div>
               </div>
 
+              {/* GALERÍA COMPLETA DE IMÁGENES (4 ARRIBA, 4 ABAJO) */}
               {getImagesArray(item).length > 0 && (
                 <div className="w-full mb-2 flex-shrink-0">
                   <p className="text-xs text-sky-300 mb-2 font-semibold uppercase tracking-widest">Imágenes Adjuntas</p>
-                  <div className="grid grid-cols-4 gap-4">
-                    {getImagesArray(item).slice(0, 4).map((imgUrl, index) => (
+                  <div className="grid grid-cols-4 gap-4 max-h-[220px] overflow-y-auto text-scroll pr-1">
+                    {getImagesArray(item).map((imgUrl, index) => (
                       <div key={index} onClick={() => setSelectedImage(imgUrl)} className="group relative aspect-[16/10] bg-black/40 rounded-lg overflow-hidden border border-white/10 shadow-md cursor-pointer hover:scale-[1.02] hover:border-sky-400 transition-all duration-300">
                         <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">{index + 1}</div>
                         <img src={imgUrl} alt={`Galería ${index + 1}`} className="w-full h-full object-cover" />
@@ -453,7 +402,7 @@ export default function Home() {
       </div>
     )}
 
-    {/* 📱 UBICACIÓN LIBRE Y INDEPENDIENTE PARA EL BUTTON PANEL MÓVIL */}
+    {/* BUTTON PANEL MÓVIL */}
     {searched && (
       <div className="block md:hidden">
         <ButtonPanel
@@ -463,7 +412,6 @@ export default function Home() {
           seccionAbierta={seccionAbierta}
           setSeccionAbierta={setSeccionAbierta}
           isMobile={true}
-           
         />
       </div>
     )}
