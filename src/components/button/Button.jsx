@@ -6,7 +6,7 @@ import TypeWriter from "../TypeWriter";
 import useSpeech from "../../hooks/useSpeech";
 import CalcGame from "../CalcGame";
 import Swal from "sweetalert2";
-import { jsPDF } from "jspdf"; 
+import { jsPDF } from "jspdf";
 
 const SECTIONS = {
   history: "Historial",
@@ -23,7 +23,13 @@ export default function ButtonPanel({
 }) {
   const [active, setActive] = useState(null);
   const [micOn, setMicOn] = useState(false);
+  const micOnRef = useRef(micOn);
   const reconocimientoRef = useRef(null);
+
+  // Mantener micOnRef actualizado para los callbacks de SpeechRecognition
+  useEffect(() => {
+    micOnRef.current = micOn;
+  }, [micOn]);
 
   // Audio / Narrador estados
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -56,16 +62,16 @@ export default function ButtonPanel({
       notificarComando("No hay contenido disponible para leer.");
       return;
     }
-    stop(); 
-    setProgress(0); 
+    stop();
+    setProgress(0);
     setIsSpeaking(true);
-    let i = 0; 
+    let i = 0;
     const total = text.length;
     speak(text, { volume, onEnd: handleFinish });
     clearInterval(intervalRefAudio.current);
-    intervalRefAudio.current = setInterval(() => { 
-      i++; 
-      setProgress(Math.min((i / total) * 100, 100)); 
+    intervalRefAudio.current = setInterval(() => {
+      i++;
+      setProgress(Math.min((i / total) * 100, 100));
     }, 100);
     notificarComando("Reproduciendo narración");
   };
@@ -92,7 +98,12 @@ export default function ButtonPanel({
 
   /* ---------------- 🎙️ PROCESAMIENTO DE COMANDOS DE VOZ ---------------- */
   const procesarComandoVozGlobal = (frase) => {
-    const fraseLimpia = frase.replace(/[\.,]+/g, "").trim();
+    // Normalizar texto: minúsculas, sin signos de puntuación
+    const fraseLimpia = frase
+      .toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?¿¡!]/g, "")
+      .trim();
+
     console.log("Procesando frase limpia en Panel:", fraseLimpia);
 
     const lanzarNotificacion = (mensaje, icon = "success") => {
@@ -108,42 +119,42 @@ export default function ButtonPanel({
         color: "#fff",
         iconColor: "#22d3ee",
         didOpen: (toast) => {
-          toast.addEventListener('mouseenter', Swal.stopTimer);
-          toast.addEventListener('mouseleave', Swal.resumeTimer);
-        }
+          toast.addEventListener("mouseenter", Swal.stopTimer);
+          toast.addEventListener("mouseleave", Swal.resumeTimer);
+        },
       });
     };
 
     /* --- COMANDOS DE VOZ DEL NARRADOR --- */
-    const comandosReproducir = ["reproducir", "reproducir texto", "leer", "leer texto", "reproduce"];
-    const comandosPausar = ["pausar", "pausa", "pausa narrador", "pausar narrador"];
-    const comandosContinuar = ["continuar", "reanudar", "sigue leyendo", "continuar lectura"];
-    const comandosDetener = ["detener", "parar", "detener narrador", "parar narrador"];
+    const comandosReproducir = ["reproducir", "leer", "reproduce", "iniciar narrador"];
+    const comandosPausar = ["pausar", "pausa"];
+    const comandosContinuar = ["continuar", "reanudar", "sigue leyendo"];
+    const comandosDetener = ["detener", "parar"];
 
-    if (comandosReproducir.some(keyword => fraseLimpia === keyword || fraseLimpia.includes(keyword))) {
+    if (comandosReproducir.some((kw) => fraseLimpia.includes(kw))) {
       iniciarNarracion();
       return;
     }
 
-    if (comandosPausar.some(keyword => fraseLimpia === keyword || fraseLimpia.includes(keyword))) {
+    if (comandosPausar.some((kw) => fraseLimpia.includes(kw))) {
       pausarNarracion();
       return;
     }
 
-    if (comandosContinuar.some(keyword => fraseLimpia === keyword || fraseLimpia.includes(keyword))) {
+    if (comandosContinuar.some((kw) => fraseLimpia.includes(kw))) {
       continuarNarracion();
       return;
     }
 
-    if (comandosDetener.some(keyword => fraseLimpia === keyword || fraseLimpia.includes(keyword))) {
+    if (comandosDetener.some((kw) => fraseLimpia.includes(kw))) {
       detenerNarracion();
       return;
     }
 
     /* --- PDF --- */
     const comandosPDF = ["descargar pdf", "exportar pdf", "guardar pdf", "bajar pdf"];
-    if (comandosPDF.some(keyword => fraseLimpia.includes(keyword))) {
-      exportarAPDF(); 
+    if (comandosPDF.some((kw) => fraseLimpia.includes(kw))) {
+      exportarAPDF();
       return;
     }
 
@@ -156,17 +167,14 @@ export default function ButtonPanel({
     }
 
     /* --- VISOR DE IMÁGENES --- */
-    const abrirVisorKeywords = ["galería", "galeria", "ampliar", "expandir", "ver fotos", "ver imagenes", "ver imágenes", "abrir imagen", "abrir foto", "abrir la imagen"];
-    const cerrarVisorKeywords = ["cerrar", "quitar", "ocultar foto", "ocultar galería", "salir de la imagen", "cerrar imagen"];
+    const abrirVisorKeywords = ["galeria", "galería", "ampliar", "expandir", "ver fotos", "ver imagenes", "ver imágenes", "abrir imagen", "abrir foto"];
+    const cerrarVisorKeywords = ["cerrar foto", "quitar foto", "ocultar foto", "ocultar galeria", "ocultar galería", "cerrar imagen"];
 
-    const quiereAbrir = abrirVisorKeywords.some(keyword => fraseLimpia.includes(keyword));
-    const quiereCerrar = cerrarVisorKeywords.some(keyword => fraseLimpia.includes(keyword));
-
-    if (quiereAbrir) {
+    if (abrirVisorKeywords.some((kw) => fraseLimpia.includes(kw))) {
       let numeroDetectado = null;
-      const numerosEnLetras = { "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6 };
+      const numerosEnLetras = { uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6 };
       const coincidenciaDigito = fraseLimpia.match(/\d+/);
-      
+
       if (coincidenciaDigito) {
         numeroDetectado = parseInt(coincidenciaDigito[0], 10);
       } else {
@@ -178,72 +186,63 @@ export default function ButtonPanel({
         }
       }
 
-      window.dispatchEvent(new CustomEvent("voz-control-imagenes", { 
-        detail: { accion: "ABRIR", numero: numeroDetectado } 
-      }));
-      
-      if (numeroDetectado) {
-        notificarComando(`Abriendo imagen número ${numeroDetectado}`);
-      } else {
-        notificarComando("Abriendo galería de imágenes");
-      }
+      window.dispatchEvent(
+        new CustomEvent("voz-control-imagenes", {
+          detail: { accion: "ABRIR", numero: numeroDetectado },
+        })
+      );
+
+      notificarComando(numeroDetectado ? `Abriendo imagen ${numeroDetectado}` : "Abriendo galería");
       return;
     }
 
-    if (quiereCerrar) {
-      window.dispatchEvent(new CustomEvent("voz-control-imagenes", { 
-        detail: { accion: "CERRAR" } 
-      }));
+    if (cerrarVisorKeywords.some((kw) => fraseLimpia.includes(kw))) {
+      window.dispatchEvent(
+        new CustomEvent("voz-control-imagenes", {
+          detail: { accion: "CERRAR" },
+        })
+      );
       notificarComando("Imagen cerrada");
       return;
     }
 
-    if (fraseLimpia.includes("bajar a") || fraseLimpia.includes("ir a las fotos") || fraseLimpia.includes("desplazar a")) {
-      window.dispatchEvent(new CustomEvent("comando-hacer-scroll-imagenes"));
-      notificarComando("Desplazando a las imágenes");
-      return;
-    } 
-
     /* --- NAVEGACIÓN Y APERTURA DE PANELES --- */
-    const comandosCerrarPanel = ["cerrar panel", "ocultar panel", "cerrar menú", "cerrar menu", "ocultar menú", "quitar panel", "salir del panel"];
-    if (comandosCerrarPanel.some(keyword => fraseLimpia === keyword || fraseLimpia.includes(keyword))) {
+    const comandosCerrarPanel = ["cerrar panel", "ocultar panel", "cerrar menu", "cerrar menú", "ocultar menu", "ocultar menú", "quitar panel", "salir del panel"];
+    if (comandosCerrarPanel.some((kw) => fraseLimpia.includes(kw))) {
       setActive(null);
       lanzarNotificacion("Panel cerrado", "info");
       return;
     }
 
-    const palabrasCierre = ["cerrar", "ocultar", "quitar", "salir"];
-    const palabrasObjetivo = ["panel", "menú", "menu", "pestaña", "pestana", "lateral"];
-
-    const quiereCerrarPanel = palabrasCierre.some(c => fraseLimpia.includes(c)) && 
-                               palabrasObjetivo.some(o => fraseLimpia.includes(o));
-
-    if (quiereCerrarPanel) {
-      setActive(null);
-      lanzarNotificacion("Panel cerrado", "info");
-      return; 
-    }
-
-    if (fraseLimpia.includes("historial") || fraseLimpia.includes("abrir historial")) {
+    if (fraseLimpia.includes("historial")) {
       setActive("history");
       notificarComando("Mostrando Historial");
-    } 
-    else if (fraseLimpia.includes("palabras clave") || fraseLimpia.includes("ver palabras")) {
+      return;
+    }
+    
+    if (fraseLimpia.includes("palabras clave") || fraseLimpia.includes("palabras claves")) {
       setActive("keywords");
       notificarComando("Mostrando Palabras Clave");
-    } 
-    else if (fraseLimpia.includes("gramática") || fraseLimpia.includes("ver gramática")) {
+      return;
+    }
+    
+    if (fraseLimpia.includes("gramatica") || fraseLimpia.includes("gramática")) {
       setActive("grammar");
       notificarComando("Análisis Gramatical");
-    } 
-    else if (fraseLimpia.includes("narrador") || fraseLimpia.includes("abrir narrador")) {
+      return;
+    }
+    
+    if (fraseLimpia.includes("narrador") || fraseLimpia.includes("reproductor")) {
       setActive("speech");
       notificarComando("Panel del Narrador");
-    } 
-    else if (fraseLimpia.includes("juego") || fraseLimpia.includes("cálculos")) {
+      return;
+    }
+    
+    if (fraseLimpia.includes("juego") || fraseLimpia.includes("calculos") || fraseLimpia.includes("cálculos")) {
       setActive("Calculos");
       notificarComando("Abriendo juego");
-    } 
+      return;
+    }
   };
 
   useEffect(() => {
@@ -253,7 +252,7 @@ export default function ButtonPanel({
   /* ---------------- 🎙️ MOTOR DE VOZ GLOBAL ---------------- */
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+
     if (!SpeechRecognition) {
       console.warn("Este navegador no soporta el reconocimiento de voz nativo.");
       return;
@@ -265,9 +264,9 @@ export default function ButtonPanel({
     recognition.interimResults = false;
 
     recognition.onresult = (event) => {
-      const frase = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+      const frase = event.results[event.results.length - 1][0].transcript;
       console.log("Asistente de voz entendió:", frase);
-      
+
       if (procesarComandoRef.current) {
         procesarComandoRef.current(frase);
       }
@@ -280,17 +279,24 @@ export default function ButtonPanel({
     };
 
     recognition.onend = () => {
-      if (micOn) {
+      if (micOnRef.current) {
         setTimeout(() => {
-          try { 
-            recognition.start(); 
+          try {
+            recognition.start();
             console.log("🎙️ Micrófono reconectado automáticamente.");
           } catch (e) {}
         }, 300);
       }
     };
+
     reconocimientoRef.current = recognition;
-  }, [micOn]);
+
+    return () => {
+      try {
+        recognition.stop();
+      } catch (e) {}
+    };
+  }, []);
 
   /* ---------------- ⌨️ CONTROL BARRA ESPACIADORA ---------------- */
   useEffect(() => {
@@ -303,16 +309,20 @@ export default function ButtonPanel({
     };
     window.addEventListener("keydown", manejarEspaciador);
     return () => window.removeEventListener("keydown", manejarEspaciador);
-  }, [micOn]);
+  }, []);
 
   const handleMic = () => {
     setMicOn((prev) => {
       const nuevoEstado = !prev;
       if (reconocimientoRef.current) {
-        if (nuevoEstado) { 
-          try { reconocimientoRef.current.start(); } catch(e) {} 
-        } else { 
-          try { reconocimientoRef.current.stop(); } catch(e) {} 
+        if (nuevoEstado) {
+          try {
+            reconocimientoRef.current.start();
+          } catch (e) {}
+        } else {
+          try {
+            reconocimientoRef.current.stop();
+          } catch (e) {}
         }
       }
       onToggleMic?.(nuevoEstado);
@@ -328,7 +338,7 @@ export default function ButtonPanel({
         title: "Atención",
         text: "No hay contenido disponible para exportar en este momento.",
         background: "#0f172a",
-        color: "#f59e0b"
+        color: "#f59e0b",
       });
       return;
     }
@@ -345,23 +355,23 @@ export default function ButtonPanel({
       doc.text(titulo, margenIzquierdo, ejeY);
       ejeY += 15;
 
-      doc.setDrawColor(34, 211, 238); 
+      doc.setDrawColor(34, 211, 238);
       doc.setLineWidth(0.5);
       doc.line(margenIzquierdo, ejeY, 60, ejeY);
       ejeY += 10;
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(12);
-      
+
       const textoDividido = doc.splitTextToSize(material.contenido, anchoMaximoTexto);
-      
+
       textoDividido.forEach((linea) => {
         if (ejeY > 275) {
           doc.addPage();
-          ejeY = 20; 
+          ejeY = 20;
         }
         doc.text(linea, margenIzquierdo, ejeY);
-        ejeY += 7; 
+        ejeY += 7;
       });
 
       const nombreArchivo = `${titulo.toLowerCase().replace(/\s+/g, "_")}.pdf`;
@@ -374,9 +384,8 @@ export default function ButtonPanel({
         timer: 2000,
         showConfirmButton: false,
         background: "#0f172a",
-        color: "#22d3ee"
+        color: "#22d3ee",
       });
-
     } catch (error) {
       console.error("Error al generar PDF:", error);
       Swal.fire({
@@ -384,13 +393,16 @@ export default function ButtonPanel({
         title: "Error",
         text: "Hubo un problema al intentar compilar el PDF.",
         background: "#0f172a",
-        color: "#ef4444"
+        color: "#ef4444",
       });
     }
   };
 
   useEffect(() => {
-    if (!material?.contenido) { setGrammar(null); return; }
+    if (!material?.contenido) {
+      setGrammar(null);
+      return;
+    }
     if (lastMaterialRef.current === material.contenido) return;
     lastMaterialRef.current = material.contenido;
 
@@ -403,12 +415,17 @@ export default function ButtonPanel({
         });
         const data = await res.json();
         setGrammar(data);
-      } catch (err) { console.error(err); setGrammar(null); }
+      } catch (err) {
+        console.error(err);
+        setGrammar(null);
+      }
     };
     fetchGrammar();
   }, [material]);
 
-  const toggleSection = (section) => { setActive((prev) => (prev === section ? null : section)); };
+  const toggleSection = (section) => {
+    setActive((prev) => (prev === section ? null : section));
+  };
 
   useEffect(() => {
     return () => {
@@ -424,7 +441,9 @@ export default function ButtonPanel({
           <>
             <h2 className="text-white text-xl mb-4">{SECTIONS.history}</h2>
             {searchHistory.map((item, i) => (
-              <div key={i} className="text-gray-300 bg-white/5 p-2 rounded mb-2">{item}</div>
+              <div key={i} className="text-gray-300 bg-white/5 p-2 rounded mb-2">
+                {item}
+              </div>
             ))}
           </>
         );
@@ -434,7 +453,9 @@ export default function ButtonPanel({
             <h2 className="text-white text-xl mb-4">{SECTIONS.keywords}</h2>
             <div className="flex flex-wrap gap-2">
               {(grammar?.sustantivos || []).map((p, i) => (
-                <span key={i} className="bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded">{p}</span>
+                <span key={i} className="bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded">
+                  {p}
+                </span>
               ))}
             </div>
           </>
@@ -442,15 +463,26 @@ export default function ButtonPanel({
       case "grammar":
         return (
           <div className="space-y-6 text-white">
-            <div><h3 className="text-cyan-400 mb-2">Sustantivos</h3><TypeWriter text={grammar?.panel?.sustantivos || ""} speed={10} /></div>
-            <div><h3 className="text-green-400 mb-2">Verbos</h3><TypeWriter text={grammar?.panel?.verbos || ""} speed={10} /></div>
-            <div><h3 className="text-pink-400 mb-2">Adjetivos</h3><TypeWriter text={grammar?.panel?.adjetivos || ""} speed={10} /></div>
+            <div>
+              <h3 className="text-cyan-400 mb-2">Sustantivos</h3>
+              <TypeWriter text={grammar?.panel?.sustantivos || ""} speed={10} />
+            </div>
+            <div>
+              <h3 className="text-green-400 mb-2">Verbos</h3>
+              <TypeWriter text={grammar?.panel?.verbos || ""} speed={10} />
+            </div>
+            <div>
+              <h3 className="text-pink-400 mb-2">Adjetivos</h3>
+              <TypeWriter text={grammar?.panel?.adjetivos || ""} speed={10} />
+            </div>
           </div>
         );
       case "speech":
         return (
           <div className="space-y-6 text-white">
-            <h2 className="text-xl flex items-center gap-2"><Volume2 className="text-purple-400" /> Narrador</h2>
+            <h2 className="text-xl flex items-center gap-2">
+              <Volume2 className="text-purple-400" /> Narrador
+            </h2>
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
               <div className="flex justify-center py-3">
                 <button
@@ -461,9 +493,15 @@ export default function ButtonPanel({
                 </button>
               </div>
               <div className="flex justify-center gap-6 text-slate-400">
-                <button onClick={pausarNarracion} className="hover:text-white transition"><Pause /></button>
-                <button onClick={continuarNarracion} className="hover:text-white transition"><Play /></button>
-                <button onClick={detenerNarracion} className="hover:text-white transition"><Square /></button>
+                <button onClick={pausarNarracion} className="hover:text-white transition">
+                  <Pause />
+                </button>
+                <button onClick={continuarNarracion} className="hover:text-white transition">
+                  <Play />
+                </button>
+                <button onClick={detenerNarracion} className="hover:text-white transition">
+                  <Square />
+                </button>
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all" style={{ width: `${progress}%` }} />
@@ -471,78 +509,80 @@ export default function ButtonPanel({
             </div>
           </div>
         );
-      case "Calculos": return <CalcGame />;
-      default: return null;
+      case "Calculos":
+        return <CalcGame />;
+      default:
+        return null;
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row h-full md:h-screen overflow-visible">
-      
-      
-      <div className={`overflow-hidden transition-all duration-500 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
-        isOpen 
-          ? "fixed inset-x-4 bottom-24 h-[45vh] rounded-2xl border z-[100] md:relative md:inset-auto md:w-[380px] md:h-full md:rounded-none md:border-t-0 md:border-l" 
-          : "fixed inset-x-4 bottom-0 h-0 w-0 opacity-0 pointer-events-none md:relative md:w-0 md:h-full md:opacity-100 md:pointer-events-auto"
-      }`}>
+      <div
+        className={`overflow-hidden transition-all duration-300 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
+          isOpen
+            ? "fixed inset-x-4 bottom-24 h-[45vh] rounded-2xl border z-[100] md:relative md:inset-auto md:w-[380px] md:h-full md:rounded-none md:border-t-0 md:border-l opacity-100 pointer-events-auto"
+            : "fixed inset-x-4 bottom-0 h-0 opacity-0 pointer-events-none md:relative md:w-0 md:h-full md:opacity-0 md:pointer-events-none"
+        }`}
+      >
         <div className={`h-full p-5 overflow-y-auto transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>
           <div className="flex justify-end md:hidden mb-2">
-            <button onClick={() => toggleSection(active)} className="text-slate-400 text-xs bg-white/5 px-2 py-1 rounded-md border border-white/10 active:bg-white/10">✕ Cerrar</button>
+            <button onClick={() => toggleSection(active)} className="text-slate-400 text-xs bg-white/5 px-2 py-1 rounded-md border border-white/10 active:bg-white/10">
+              ✕ Cerrar
+            </button>
           </div>
           {renderSection()}
         </div>
       </div>
 
-      
       <div className="fixed bottom-0 left-0 w-full h-20 bg-[#1e293b]/95 backdrop-blur-md border-t border-white/10 flex flex-row items-center justify-start px-5 gap-4 overflow-x-auto no-scrollbar z-[100] md:relative md:bottom-auto md:left-auto md:w-20 md:h-full md:flex-col md:py-10 md:gap-8 md:overflow-x-visible md:border-t-0 md:border-l">
-        
-        <button 
-          onClick={() => toggleSection("history")} 
+        <button
+          onClick={() => toggleSection("history")}
           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
             active === "history" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
           }`}
         >
           <History className="w-5 h-5" />
         </button>
-        
-        <button 
-          onClick={() => toggleSection("keywords")} 
+
+        <button
+          onClick={() => toggleSection("keywords")}
           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
             active === "keywords" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
           }`}
         >
           <KeyRound className="w-5 h-5" />
         </button>
-        
-        <button 
-          onClick={() => toggleSection("grammar")} 
+
+        <button
+          onClick={() => toggleSection("grammar")}
           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
             active === "grammar" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
           }`}
         >
           <Brain className="w-5 h-5" />
         </button>
-        
-        <button 
-          onClick={() => toggleSection("speech")} 
+
+        <button
+          onClick={() => toggleSection("speech")}
           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
             active === "speech" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
           }`}
         >
           <Volume2 className="w-5 h-5" />
         </button>
-        
-        <button 
-          onClick={() => toggleSection("Calculos")} 
+
+        <button
+          onClick={() => toggleSection("Calculos")}
           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border text-xl transition ${
             active === "Calculos" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "border-white/10 bg-slate-950/40 hover:scale-110"
           }`}
         >
           <Gamepad2 className="w-5 h-5 text-white" />
         </button>
-        
-        <button 
-          onClick={handleMic} 
+
+        <button
+          onClick={handleMic}
           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition shadow-lg relative ${
             micOn ? "bg-green-500 text-white animate-pulse" : "bg-red-500 text-white"
           }`}
@@ -551,14 +591,13 @@ export default function ButtonPanel({
           {micOn && <span className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />}
         </button>
 
-        <button 
-          onClick={exportarAPDF} 
+        <button
+          onClick={exportarAPDF}
           className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border border-white/10 bg-slate-950/40 text-white hover:text-red-400 transition"
           title="Exportar PDF"
         >
           <FileDown className="w-5 h-5" />
         </button>
-
       </div>
     </div>
   );
