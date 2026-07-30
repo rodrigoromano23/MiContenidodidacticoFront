@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useRef } from "react";
 import { History, KeyRound, Brain, Volume2, Mic, Play, Pause, Square, FileDown, Gamepad2 } from "lucide-react";
 import TypeWriter from "../TypeWriter";
@@ -26,7 +24,6 @@ export default function ButtonPanel({
   const micOnRef = useRef(micOn);
   const reconocimientoRef = useRef(null);
 
-  // Mantener micOnRef actualizado para los callbacks de SpeechRecognition
   useEffect(() => {
     micOnRef.current = micOn;
   }, [micOn]);
@@ -77,18 +74,28 @@ export default function ButtonPanel({
   };
 
   const pausarNarracion = () => {
+    // Intentar pausar usando el hook y la API nativa directamente por compatibilidad
+    if (window.speechSynthesis) {
+      window.speechSynthesis.pause();
+    }
     pause();
     setIsSpeaking(false);
     notificarComando("Narrador pausado");
   };
 
   const continuarNarracion = () => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.resume();
+    }
     resume();
     setIsSpeaking(true);
     notificarComando("Continuando narración");
   };
 
   const detenerNarracion = () => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     stop();
     setIsSpeaking(false);
     setProgress(0);
@@ -98,7 +105,6 @@ export default function ButtonPanel({
 
   /* ---------------- 🎙️ PROCESAMIENTO DE COMANDOS DE VOZ ---------------- */
   const procesarComandoVozGlobal = (frase) => {
-    // Normalizar texto: minúsculas, sin signos de puntuación
     const fraseLimpia = frase
       .toLowerCase()
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?¿¡!]/g, "")
@@ -118,18 +124,43 @@ export default function ButtonPanel({
         background: "#0f172a",
         color: "#fff",
         iconColor: "#22d3ee",
-        didOpen: (toast) => {
-          toast.addEventListener("mouseenter", Swal.stopTimer);
-          toast.addEventListener("mouseleave", Swal.resumeTimer);
-        },
       });
     };
 
-    /* --- COMANDOS DE VOZ DEL NARRADOR --- */
+    /* --- 🎮 1. RESPUESTAS PARA EL JUEGO MATEMÁTICO --- */
+    // Mapeo de números escritos en palabras a dígitos
+    const textoANumeros = {
+      cero: 0, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+      once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20
+    };
+
+    // Extraer número directo de la frase
+    const matchNumero = fraseLimpia.match(/\d+/);
+    let numeroRespuesta = matchNumero ? parseInt(matchNumero[0], 10) : null;
+
+    if (numeroRespuesta === null) {
+      for (const [palabra, valor] of Object.entries(textoANumeros)) {
+        if (fraseLimpia.includes(palabra)) {
+          numeroRespuesta = valor;
+          break;
+        }
+      }
+    }
+
+    // Si detectamos un número o una respuesta, enviamos el evento al juego
+    if (numeroRespuesta !== null || fraseLimpia.includes("es") || fraseLimpia.includes("resultado")) {
+      window.dispatchEvent(
+        new CustomEvent("voz-respuesta-matematica", {
+          detail: { respuesta: numeroRespuesta, fraseOriginal: fraseLimpia },
+        })
+      );
+    }
+
+    /* --- 🔊 2. COMANDOS DEL NARRADOR --- */
     const comandosReproducir = ["reproducir", "leer", "reproduce", "iniciar narrador"];
-    const comandosPausar = ["pausar", "pausa"];
-    const comandosContinuar = ["continuar", "reanudar", "sigue leyendo"];
-    const comandosDetener = ["detener", "parar"];
+    const comandosPausar = ["pausar", "pausa", "parar narrador", "pausar narrador"];
+    const comandosContinuar = ["continuar", "reanudar", "sigue leyendo", "continuar narracion", "continuar lectura"];
+    const comandosDetener = ["detener", "parar", "cancelar narracion"];
 
     if (comandosReproducir.some((kw) => fraseLimpia.includes(kw))) {
       iniciarNarracion();
@@ -191,8 +222,6 @@ export default function ButtonPanel({
           detail: { accion: "ABRIR", numero: numeroDetectado },
         })
       );
-
-      notificarComando(numeroDetectado ? `Abriendo imagen ${numeroDetectado}` : "Abriendo galería");
       return;
     }
 
@@ -202,11 +231,10 @@ export default function ButtonPanel({
           detail: { accion: "CERRAR" },
         })
       );
-      notificarComando("Imagen cerrada");
       return;
     }
 
-    /* --- NAVEGACIÓN Y APERTURA DE PANELES --- */
+    /* --- NAVEGACIÓN Y PANELES --- */
     const comandosCerrarPanel = ["cerrar panel", "ocultar panel", "cerrar menu", "cerrar menú", "ocultar menu", "ocultar menú", "quitar panel", "salir del panel"];
     if (comandosCerrarPanel.some((kw) => fraseLimpia.includes(kw))) {
       setActive(null);
@@ -216,31 +244,26 @@ export default function ButtonPanel({
 
     if (fraseLimpia.includes("historial")) {
       setActive("history");
-      notificarComando("Mostrando Historial");
       return;
     }
     
     if (fraseLimpia.includes("palabras clave") || fraseLimpia.includes("palabras claves")) {
       setActive("keywords");
-      notificarComando("Mostrando Palabras Clave");
       return;
     }
     
     if (fraseLimpia.includes("gramatica") || fraseLimpia.includes("gramática")) {
       setActive("grammar");
-      notificarComando("Análisis Gramatical");
       return;
     }
     
     if (fraseLimpia.includes("narrador") || fraseLimpia.includes("reproductor")) {
       setActive("speech");
-      notificarComando("Panel del Narrador");
       return;
     }
     
     if (fraseLimpia.includes("juego") || fraseLimpia.includes("calculos") || fraseLimpia.includes("cálculos")) {
       setActive("Calculos");
-      notificarComando("Abriendo juego");
       return;
     }
   };
@@ -253,10 +276,7 @@ export default function ButtonPanel({
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      console.warn("Este navegador no soporta el reconocimiento de voz nativo.");
-      return;
-    }
+    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -283,7 +303,6 @@ export default function ButtonPanel({
         setTimeout(() => {
           try {
             recognition.start();
-            console.log("🎙️ Micrófono reconectado automáticamente.");
           } catch (e) {}
         }, 300);
       }
@@ -336,7 +355,7 @@ export default function ButtonPanel({
       Swal.fire({
         icon: "warning",
         title: "Atención",
-        text: "No hay contenido disponible para exportar en este momento.",
+        text: "No hay contenido disponible para exportar.",
         background: "#0f172a",
         color: "#f59e0b",
       });
@@ -388,13 +407,6 @@ export default function ButtonPanel({
       });
     } catch (error) {
       console.error("Error al generar PDF:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Hubo un problema al intentar compilar el PDF.",
-        background: "#0f172a",
-        color: "#ef4444",
-      });
     }
   };
 

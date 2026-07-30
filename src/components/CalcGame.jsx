@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
+function rand(n) {
+  return Math.floor(Math.random() * n);
+}
+
 export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState([]);
@@ -113,22 +117,20 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
       const { respuesta } = e.detail || {};
 
       if (respuesta !== undefined && respuesta !== null) {
-        console.log("🎮 Respuesta capturada por voz:", respuesta);
+        console.log("🎮 Respuesta capturada por voz en el juego:", respuesta);
         handleAnswer(respuesta);
       }
     };
 
-    window.addEventListener("voz-control-juego", manejarRespuestaVoz);
-    return () => window.removeEventListener("voz-control-juego", manejarRespuestaVoz);
-  }, [correct, score, calcLevel]); // Mantiene vivas las variables para responder correctamente
+    // Nombre exacto del evento emitido desde ButtonPanel.jsx
+    window.addEventListener("voz-respuesta-matematica", manejarRespuestaVoz);
+    return () => window.removeEventListener("voz-respuesta-matematica", manejarRespuestaVoz);
+  }, [correct, score, calcLevel]);
 
-  const crowns =
-    score >= 1000 ? 1 + Math.floor((score - 1000) / 1200) : 0;
+  const crowns = score >= 1000 ? 1 + Math.floor((score - 1000) / 1200) : 0;
 
   return (
     <div className="space-y-5 text-white">
-
-      
       <div className="flex justify-between items-center">
         <div className="text-lg flex gap-2 items-center">
           Puntaje: {score}
@@ -144,7 +146,6 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
         </div>
       </div>
 
-      
       <div className="text-cyan-300">
         Nivel: {
           calcLevel === 1 ? "Sumas" :
@@ -154,12 +155,10 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
         }
       </div>
 
-      
       <div className="text-2xl font-bold text-center">
         {question}
       </div>
 
-      
       <div className="flex justify-center gap-4">
         {options.map((opt, i) => (
           <button
@@ -180,11 +179,8 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
         ))}
       </div>
 
-      
       <div className="flex flex-col items-center mt-6">
-
         <div className="relative w-28 h-28 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
-          
           <svg className="w-full h-full rotate-[-90deg]">
             <circle
               cx="50%"
@@ -222,8 +218,4 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
       </div>
     </div>
   );
-}
-
-function rand(n) {
-  return Math.floor(Math.random() * n);
 }
