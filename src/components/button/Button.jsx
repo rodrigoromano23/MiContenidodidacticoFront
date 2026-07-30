@@ -412,7 +412,7 @@ export default function ButtonPanel({
   return (
   <div className="flex flex-col md:flex-row h-full md:h-screen overflow-visible">
     
-    {/* 🔼 PANEL FLOTANTE DESPLEGABLE (Emerge hacia arriba en mobile sin tapar todo) */}
+    {/* PANEL FLOTANTE DESPLEGABLE */}
     /*<div className={`overflow-hidden transition-all duration-500 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
       isOpen 
         ? "fixed inset-x-4 bottom-24 h-[45vh] rounded-2xl border z-[100] md:relative md:inset-auto md:w-[380px] md:h-full md:rounded-none md:border-t-0 md:border-l" 
