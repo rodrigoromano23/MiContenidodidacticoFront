@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { History, KeyRound, Brain, Volume2, Mic, Play, Pause, Square, FileDown, Gamepad2 } from "lucide-react";
 import TypeWriter from "../TypeWriter";
-import useSpeech from "../../hooks/useSpeech";
 import CalcGame from "../CalcGame";
 import Swal from "sweetalert2";
 import { jsPDF } from "jspdf";
@@ -30,13 +29,14 @@ export default function ButtonPanel({
 
   // Audio / Narrador estados
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const intervalRefAudio = useRef(null);
+
+  // Ref nativo para controlar la locución sin perder la instancia al pausar
+  const utteranceRef = useRef(null);
 
   const [grammar, setGrammar] = useState(null);
   const lastMaterialRef = useRef(null);
-  const { speak, pause, resume, stop } = useSpeech();
 
   const isOpen = active !== null;
   const procesarComandoRef = useRef(null);
@@ -45,61 +45,80 @@ export default function ButtonPanel({
     console.log(`🎙️ Comando ejecutado: ${mensaje}`);
   };
 
-  /* ---------------- 🔊 FUNCIONES DE CONTROL DEL NARRADOR ---------------- */
-  const handleFinish = () => {
-    clearInterval(intervalRefAudio.current);
-    setIsSpeaking(false);
-    setProgress(100);
-    Swal.fire({ icon: "success", title: "Narración finalizada", timer: 2000, showConfirmButton: false });
-  };
-
+  /* ---------------- 🔊 FUNCIONES DE CONTROL DEL NARRADOR (CORREGIDAS) ---------------- */
   const iniciarNarracion = () => {
     const text = material?.contenido || "";
     if (!text) {
       notificarComando("No hay contenido disponible para leer.");
       return;
     }
-    stop();
-    setProgress(0);
+
+    // Limpiar locuciones anteriores
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    // Crear la instancia de voz nativa
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "es-ES";
+    utteranceRef.current = utterance;
+
+    const totalChars = text.length;
+
+    // Actualizar barra de progreso con el evento nativo del navegador
+    utterance.onboundary = (event) => {
+      if (event.charIndex !== undefined) {
+        setProgress(Math.min((event.charIndex / totalChars) * 100, 100));
+      }
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      setProgress(100);
+      Swal.fire({
+        icon: "success",
+        title: "Narración finalizada",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    };
+
+    window.speechSynthesis.speak(utterance);
     setIsSpeaking(true);
-    let i = 0;
-    const total = text.length;
-    speak(text, { volume, onEnd: handleFinish });
-    clearInterval(intervalRefAudio.current);
-    intervalRefAudio.current = setInterval(() => {
-      i++;
-      setProgress(Math.min((i / total) * 100, 100));
-    }, 100);
+    setIsPaused(false);
+    setProgress(0);
     notificarComando("Reproduciendo narración");
   };
 
   const pausarNarracion = () => {
-    // Intentar pausar usando el hook y la API nativa directamente por compatibilidad
-    if (window.speechSynthesis) {
+    if (window.speechSynthesis && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
       window.speechSynthesis.pause();
+      setIsSpeaking(false);
+      setIsPaused(true);
+      notificarComando("Narrador pausado");
     }
-    pause();
-    setIsSpeaking(false);
-    notificarComando("Narrador pausado");
   };
 
   const continuarNarracion = () => {
-    if (window.speechSynthesis) {
+    if (window.speechSynthesis && window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
+      setIsSpeaking(true);
+      setIsPaused(false);
+      notificarComando("Continuando narración");
+    } else if (window.speechSynthesis && !window.speechSynthesis.speaking) {
+      // Si por alguna razón la síntesis se canceló en vez de pausar, reiniciamos
+      iniciarNarracion();
     }
-    resume();
-    setIsSpeaking(true);
-    notificarComando("Continuando narración");
   };
 
   const detenerNarracion = () => {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
-    stop();
     setIsSpeaking(false);
+    setIsPaused(false);
     setProgress(0);
-    clearInterval(intervalRefAudio.current);
     notificarComando("Narración detenida");
   };
 
@@ -128,13 +147,11 @@ export default function ButtonPanel({
     };
 
     /* --- 🎮 1. RESPUESTAS PARA EL JUEGO MATEMÁTICO --- */
-    // Mapeo de números escritos en palabras a dígitos
     const textoANumeros = {
       cero: 0, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
       once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20
     };
 
-    // Extraer número directo de la frase
     const matchNumero = fraseLimpia.match(/\d+/);
     let numeroRespuesta = matchNumero ? parseInt(matchNumero[0], 10) : null;
 
@@ -147,7 +164,6 @@ export default function ButtonPanel({
       }
     }
 
-    // Si detectamos un número o una respuesta, enviamos el evento al juego
     if (numeroRespuesta !== null || fraseLimpia.includes("es") || fraseLimpia.includes("resultado")) {
       window.dispatchEvent(
         new CustomEvent("voz-respuesta-matematica", {
@@ -156,28 +172,30 @@ export default function ButtonPanel({
       );
     }
 
-    /* --- 🔊 2. COMANDOS DEL NARRADOR --- */
+    /* --- 🔊 2. COMANDOS DEL NARRADOR (EXPRESIONES REGULARES PRECISAS) --- */
+    const comandosPausar = ["pausar", "pausa", "espera", "pausa el texto"];
+    const comandosContinuar = ["continuar", "reanudar", "sigue leyendo", "sigue", "continuar narracion"];
     const comandosReproducir = ["reproducir", "leer", "reproduce", "iniciar narrador"];
-    const comandosPausar = ["pausar", "pausa", "parar narrador", "pausar narrador"];
-    const comandosContinuar = ["continuar", "reanudar", "sigue leyendo", "continuar narracion", "continuar lectura"];
-    const comandosDetener = ["detener", "parar", "cancelar narracion"];
+    const comandosDetener = ["detener", "parar", "cancelar narracion", "deten narracion"];
 
-    if (comandosReproducir.some((kw) => fraseLimpia.includes(kw))) {
-      iniciarNarracion();
-      return;
-    }
+    const coincide = (lista) => lista.some((kw) => new RegExp(`\\b${kw}\\b`, "i").test(fraseLimpia));
 
-    if (comandosPausar.some((kw) => fraseLimpia.includes(kw))) {
+    if (coincide(comandosPausar)) {
       pausarNarracion();
       return;
     }
 
-    if (comandosContinuar.some((kw) => fraseLimpia.includes(kw))) {
+    if (coincide(comandosContinuar)) {
       continuarNarracion();
       return;
     }
 
-    if (comandosDetener.some((kw) => fraseLimpia.includes(kw))) {
+    if (coincide(comandosReproducir)) {
+      iniciarNarracion();
+      return;
+    }
+
+    if (coincide(comandosDetener)) {
       detenerNarracion();
       return;
     }
@@ -441,7 +459,7 @@ export default function ButtonPanel({
 
   useEffect(() => {
     return () => {
-      clearInterval(intervalRefAudio.current);
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (reconocimientoRef.current) reconocimientoRef.current.stop();
     };
   }, []);
@@ -505,18 +523,30 @@ export default function ButtonPanel({
                 </button>
               </div>
               <div className="flex justify-center gap-6 text-slate-400">
-                <button onClick={pausarNarracion} className="hover:text-white transition">
+                <button 
+                  onClick={pausarNarracion} 
+                  className={`hover:text-white transition ${isPaused ? "text-yellow-400" : ""}`}
+                  title="Pausar"
+                >
                   <Pause />
                 </button>
-                <button onClick={continuarNarracion} className="hover:text-white transition">
+                <button 
+                  onClick={continuarNarracion} 
+                  className={`hover:text-white transition ${isSpeaking ? "text-green-400" : ""}`}
+                  title="Continuar"
+                >
                   <Play />
                 </button>
-                <button onClick={detenerNarracion} className="hover:text-white transition">
+                <button 
+                  onClick={detenerNarracion} 
+                  className="hover:text-white transition"
+                  title="Detener"
+                >
                   <Square />
                 </button>
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all" style={{ width: `${progress}%` }} />
+                <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300" style={{ width: `${progress}%` }} />
               </div>
             </div>
           </div>
