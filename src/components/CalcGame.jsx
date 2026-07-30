@@ -1,10 +1,31 @@
-
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 
+// 1. Función para generar números aleatorios
 function rand(n) {
   return Math.floor(Math.random() * n);
+}
+
+// 2. Función para convertir lo que habla el usuario ("doce", "quince") a un Number real
+function textoANumero(texto) {
+  if (typeof texto === "number") return texto;
+  if (!texto) return null;
+
+  const limpio = texto.toString().trim().toLowerCase();
+
+  // Si ya es un dígito ("12")
+  if (!isNaN(parseInt(limpio))) return parseInt(limpio);
+
+  const numeros = {
+    cero: 0, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
+    seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11,
+    doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16,
+    diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20,
+    veintiuno: 21, veintidos: 22, veintitres: 23, veinticuatro: 24,
+    veinticinco: 25, treinta: 30, cuarenta: 40, cincuenta: 50
+  };
+
+  return numeros[limpio] !== undefined ? numeros[limpio] : null;
 }
 
 export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
@@ -18,6 +39,10 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
 
   const [feedback, setFeedback] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Mantener la referencia actualizada de la respuesta correcta y del handler
+  const correctRef = useRef(correct);
+  const handleAnswerRef = useRef();
 
   const generate = () => {
     let a, b, op, result;
@@ -84,7 +109,7 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
   }, [time]);
 
   const handleAnswer = (opt) => {
-    if (opt === correct) {
+    if (opt === correctRef.current) {
       setSuccessMsg("✔ Bien...!");
 
       const gain = Math.floor(Math.random() * 3) + 1;
@@ -111,21 +136,30 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
     }
   };
 
+  // Guardar las referencias más recientes
+  useEffect(() => {
+    correctRef.current = correct;
+    handleAnswerRef.current = handleAnswer;
+  });
+
   /* ---------------- 🎙️ ESCUCHADOR DE COMANDOS DE VOZ EN EL JUEGO ---------------- */
   useEffect(() => {
     const manejarRespuestaVoz = (e) => {
-      const { respuesta } = e.detail || {};
+      const rawRespuesta = e.detail?.respuesta;
 
-      if (respuesta !== undefined && respuesta !== null) {
-        console.log("🎮 Respuesta capturada por voz en el juego:", respuesta);
-        handleAnswer(respuesta);
+      if (rawRespuesta !== undefined && rawRespuesta !== null) {
+        const numero = textoANumero(rawRespuesta);
+        console.log("🎮 Respuesta de voz recibida:", rawRespuesta, "-> Convertido:", numero);
+
+        if (numero !== null && handleAnswerRef.current) {
+          handleAnswerRef.current(numero);
+        }
       }
     };
 
-    // Nombre exacto del evento emitido desde ButtonPanel.jsx
     window.addEventListener("voz-respuesta-matematica", manejarRespuestaVoz);
     return () => window.removeEventListener("voz-respuesta-matematica", manejarRespuestaVoz);
-  }, [correct, score, calcLevel]);
+  }, []);
 
   const crowns = score >= 1000 ? 1 + Math.floor((score - 1000) / 1200) : 0;
 
@@ -209,7 +243,6 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
           </div>
         </div>
 
-        
         {feedback && (
           <div className="mt-2 text-red-400 text-sm animate-pulse">
             {feedback}
