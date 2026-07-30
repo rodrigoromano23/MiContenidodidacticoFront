@@ -209,7 +209,7 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
           </div>
         </div>
 
-        {/* ERROR ABAJO DEL TIMER */}
+        
         {feedback && (
           <div className="mt-2 text-red-400 text-sm animate-pulse">
             {feedback}
