@@ -339,7 +339,7 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
   return (
     <div className="space-y-5 text-white">
 
-      {/* HEADER */}
+      
       <div className="flex justify-between items-center">
         <div className="text-lg flex gap-2 items-center">
           Puntaje: {score}
@@ -355,7 +355,7 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
         </div>
       </div>
 
-      {/* NIVEL */}
+      
       <div className="text-cyan-300">
         Nivel: {
           calcLevel === 1 ? "Sumas" :
@@ -365,12 +365,12 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
         }
       </div>
 
-      {/* EJERCICIO */}
+      
       <div className="text-2xl font-bold text-center">
         {question}
       </div>
 
-      {/* OPCIONES EN FILA */}
+      
       <div className="flex justify-center gap-4">
         {options.map((opt, i) => (
           <button
@@ -391,7 +391,7 @@ export default function CalcGame({ calcLevel = 1, setCalcLevel }) {
         ))}
       </div>
 
-      {/* TIMER MEJORADO */}
+      
       <div className="flex flex-col items-center mt-6">
 
         <div className="relative w-28 h-28 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
