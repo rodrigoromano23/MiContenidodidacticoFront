@@ -6,6 +6,7 @@ import VoiceAssistant from "../components/VoiceAssistant";
 import TypeWriter from "../components/TypeWriter";
 import Loader from "../components/Loader";
 import { Mic, ArrowRight } from "lucide-react";
+import { useNarradorPropio } from "../../hooks/useNarradorPropio";
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(true);
