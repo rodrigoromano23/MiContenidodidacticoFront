@@ -1,10 +1,11 @@
 
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ButtonPanel from "../components/button/Button";
 import VoiceAssistant from "../components/VoiceAssistant";
 import TypeWriter from "../components/TypeWriter";
 import Loader from "../components/Loader";
+import { Mic, ArrowRight } from "lucide-react";
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(true);
@@ -18,6 +19,10 @@ export default function Home() {
   
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+
+  // Estado para el micrófono del input de búsqueda
+  const [inputMicActive, setInputMicActive] = useState(false);
+  const searchMicRef = useRef(null);
   
   const cleanUrl = (url) => {
     if (!url) return "";
@@ -66,6 +71,57 @@ export default function Home() {
       setResults([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /* ---------------- 🎙️ RECONOCIMIENTO DE VOZ DIRECTO EN EL INPUT ---------------- */
+  const toggleInputMic = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Tu navegador no soporta reconocimiento de voz.");
+      return;
+    }
+
+    if (inputMicActive) {
+      if (searchMicRef.current) searchMicRef.current.stop();
+      setInputMicActive(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setInputMicActive(true);
+    };
+
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      setQuery(transcript);
+      setInputMicActive(false);
+      // Búsqueda automática una vez dictado
+      handleSearch(transcript);
+    };
+
+    recognition.onerror = (e) => {
+      console.error("Error en micrófono de búsqueda:", e.error);
+      setInputMicActive(false);
+    };
+
+    recognition.onend = () => {
+      setInputMicActive(false);
+    };
+
+    searchMicRef.current = recognition;
+    recognition.start();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSearch();
     }
   };
 
@@ -158,14 +214,6 @@ export default function Home() {
     return <Loader />;
   }
 
-  const toggleSeccionMobile = (seccion) => {
-    setSeccionAbierta(seccionAbierta === seccion ? null : seccion);
-  };
-
-  const handleDescargarPDF = () => {
-    alert("Generando y descargando PDF del material...");
-  };
-
   return (
     <div className="relative flex h-[100dvh] w-full bg-slate-950 text-white overflow-hidden select-none">
       
@@ -224,20 +272,38 @@ export default function Home() {
               <p className="text-xs text-slate-400 mt-1">Escribe tu tema de estudio</p>
             </div>
           )}
-          <div className="relative max-w-sm mx-auto shadow-xl">
+          
+          {/* BUSCADOR MÓVIL */}
+          <div className="relative max-w-sm mx-auto shadow-xl flex items-center">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Buscar temas..."
-              className="w-full py-3.5 pl-5 pr-12 rounded-full bg-white text-black text-sm focus:outline-none"
+              className="w-full py-3.5 pl-5 pr-24 rounded-full bg-white text-black text-sm focus:outline-none"
             />
-            <button
-              onClick={() => handleSearch()}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-indigo-600 text-white p-2.5 rounded-full"
-            >
-              🔍
-            </button>
+            <div className="absolute right-1.5 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleInputMic}
+                className={`p-2 rounded-full transition ${
+                  inputMicActive ? "bg-red-500 text-white animate-pulse" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                title="Dictar por voz"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSearch()}
+                className="bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full transition shadow-md flex items-center justify-center"
+                title="Buscar"
+              >
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
           </div>
+
           {loading && (
             <div className="flex justify-center mt-3">
               <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
@@ -344,7 +410,7 @@ export default function Home() {
       {/* Interfaz Escritorio */}
       <div className="hidden md:flex flex-1 relative flex-col justify-between p-12 overflow-y-auto z-10 text-scroll">
         <div className={`fixed transition-all duration-500 ease-in-out z-20 ${
-          isCompact ? "top-6 left-6 w-[280px] scale-95" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
+          isCompact ? "top-6 left-6 w-[320px] scale-95" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
         }`}>
           {!isCompact && (
             <div className="text-center mb-6">
@@ -353,19 +419,35 @@ export default function Home() {
             </div>
           )}
 
-          <div className="relative">
+          {/* BUSCADOR ESCRITORIO */}
+          <div className="relative flex items-center">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Buscar temas..."
-              className="w-full py-4 pl-5 pr-14 rounded-full bg-white text-black focus:outline-none shadow-xl"
+              className="w-full py-4 pl-5 pr-28 rounded-full bg-white text-black focus:outline-none shadow-xl text-base"
             />
-            <button
-              onClick={() => handleSearch()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-full"
-            >
-              🔍
-            </button>
+            <div className="absolute right-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={toggleInputMic}
+                className={`p-2.5 rounded-full transition ${
+                  inputMicActive ? "bg-red-500 text-white animate-pulse" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                title="Dictar por voz"
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSearch()}
+                className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition shadow-md flex items-center justify-center active:scale-95"
+                title="Buscar"
+              >
+                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            </div>
           </div>
 
           {loading && (
