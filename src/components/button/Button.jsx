@@ -4,6 +4,8 @@ import TypeWriter from "../TypeWriter";
 import CalcGame from "../CalcGame";
 import Swal from "sweetalert2";
 import { jsPDF } from "jspdf";
+// 1. IMPORTANTE: Importamos tu hook propio
+import { useNarradorPropio } from '../hooks/useNarradorPropio';
 
 const SECTIONS = {
   history: "Historial",
@@ -23,17 +25,12 @@ export default function ButtonPanel({
   const micOnRef = useRef(micOn);
   const reconocimientoRef = useRef(null);
 
+  // 2. CONECTAMOS EL HOOK DEL NARRADOR PROPIO
+  const { estado: estadoNarrador, reproducir, pausar, continuar, detener } = useNarradorPropio();
+
   useEffect(() => {
     micOnRef.current = micOn;
   }, [micOn]);
-
-  // Audio / Narrador estados
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  // Ref nativo para controlar la locución sin perder la instancia al pausar
-  const utteranceRef = useRef(null);
 
   const [grammar, setGrammar] = useState(null);
   const lastMaterialRef = useRef(null);
@@ -45,80 +42,29 @@ export default function ButtonPanel({
     console.log(`🎙️ Comando ejecutado: ${mensaje}`);
   };
 
-  /* ---------------- 🔊 FUNCIONES DE CONTROL DEL NARRADOR (CORREGIDAS) ---------------- */
+  /* ---------------- 🔊 FUNCIONES DE CONTROL ADAPTADAS AL HOOK ---------------- */
   const iniciarNarracion = () => {
     const text = material?.contenido || "";
     if (!text) {
       notificarComando("No hay contenido disponible para leer.");
       return;
     }
-
-    // Limpiar locuciones anteriores
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-
-    // Crear la instancia de voz nativa
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "es-ES";
-    utteranceRef.current = utterance;
-
-    const totalChars = text.length;
-
-    // Actualizar barra de progreso con el evento nativo del navegador
-    utterance.onboundary = (event) => {
-      if (event.charIndex !== undefined) {
-        setProgress(Math.min((event.charIndex / totalChars) * 100, 100));
-      }
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
-      setProgress(100);
-      Swal.fire({
-        icon: "success",
-        title: "Narración finalizada",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    };
-
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
-    setIsPaused(false);
-    setProgress(0);
+    reproducir(text);
     notificarComando("Reproduciendo narración");
   };
 
   const pausarNarracion = () => {
-    if (window.speechSynthesis && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-      window.speechSynthesis.pause();
-      setIsSpeaking(false);
-      setIsPaused(true);
-      notificarComando("Narrador pausado");
-    }
+    pausar();
+    notificarComando("Narrador pausado");
   };
 
   const continuarNarracion = () => {
-    if (window.speechSynthesis && window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setIsSpeaking(true);
-      setIsPaused(false);
-      notificarComando("Continuando narración");
-    } else if (window.speechSynthesis && !window.speechSynthesis.speaking) {
-      // Si por alguna razón la síntesis se canceló en vez de pausar, reiniciamos
-      iniciarNarracion();
-    }
+    continuar();
+    notificarComando("Continuando narración");
   };
 
   const detenerNarracion = () => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setIsSpeaking(false);
-    setIsPaused(false);
-    setProgress(0);
+    detener();
     notificarComando("Narración detenida");
   };
 
@@ -172,7 +118,7 @@ export default function ButtonPanel({
       );
     }
 
-    /* --- 🔊 2. COMANDOS DEL NARRADOR (EXPRESIONES REGULARES PRECISAS) --- */
+    /* --- 🔊 2. COMANDOS DEL NARRADOR --- */
     const comandosPausar = ["pausar", "pausa", "espera", "pausa el texto"];
     const comandosContinuar = ["continuar", "reanudar", "sigue leyendo", "sigue", "continuar narracion"];
     const comandosReproducir = ["reproducir", "leer", "reproduce", "iniciar narrador"];
@@ -459,7 +405,7 @@ export default function ButtonPanel({
 
   useEffect(() => {
     return () => {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      detener(); // Detiene la voz del hook al desmontar
       if (reconocimientoRef.current) reconocimientoRef.current.stop();
     };
   }, []);
@@ -514,25 +460,48 @@ export default function ButtonPanel({
               <Volume2 className="text-purple-400" /> Narrador
             </h2>
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+              
+              {/* BOTÓN PRINCIPAL ADAPTADO AL ESTADO DEL HOOK */}
               <div className="flex justify-center py-3">
-                <button
-                  onClick={iniciarNarracion}
-                  className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-400 flex items-center justify-center shadow-lg hover:scale-105 transition"
-                >
-                  <Play className="w-8 h-8 text-white ml-1" />
-                </button>
+                {estadoNarrador === 'reproduciendo' ? (
+                  <button
+                    onClick={pausarNarracion}
+                    className="w-20 h-20 rounded-full bg-yellow-500 flex items-center justify-center shadow-lg hover:scale-105 transition"
+                    title="Pausar"
+                  >
+                    <Pause className="w-8 h-8 text-slate-950" />
+                  </button>
+                ) : estadoNarrador === 'pausado' ? (
+                  <button
+                    onClick={continuarNarracion}
+                    className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg hover:scale-105 transition"
+                    title="Continuar"
+                  >
+                    <Play className="w-8 h-8 text-slate-950 ml-1" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={iniciarNarracion}
+                    className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-400 flex items-center justify-center shadow-lg hover:scale-105 transition"
+                    title="Reproducir"
+                  >
+                    <Play className="w-8 h-8 text-white ml-1" />
+                  </button>
+                )}
               </div>
+
+              {/* BOTONES SECUNDARIOS */}
               <div className="flex justify-center gap-6 text-slate-400">
                 <button 
                   onClick={pausarNarracion} 
-                  className={`hover:text-white transition ${isPaused ? "text-yellow-400" : ""}`}
+                  className={`hover:text-white transition ${estadoNarrador === 'pausado' ? "text-yellow-400" : ""}`}
                   title="Pausar"
                 >
                   <Pause />
                 </button>
                 <button 
                   onClick={continuarNarracion} 
-                  className={`hover:text-white transition ${isSpeaking ? "text-green-400" : ""}`}
+                  className={`hover:text-white transition ${estadoNarrador === 'reproduciendo' ? "text-green-400" : ""}`}
                   title="Continuar"
                 >
                   <Play />
@@ -545,9 +514,7 @@ export default function ButtonPanel({
                   <Square />
                 </button>
               </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300" style={{ width: `${progress}%` }} />
-              </div>
+
             </div>
           </div>
         );
