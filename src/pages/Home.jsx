@@ -1,61 +1,56 @@
-
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ButtonPanel from "../components/button/Button";
 import VoiceAssistant from "../components/VoiceAssistant";
 import TypeWriter from "../components/TypeWriter";
 import Loader from "../components/Loader";
 import { Mic, ArrowRight } from "lucide-react";
 
+const API_URL = "https://micontenidodidactico.onrender.com/api/materials";
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(true);
-
   const [query, setQuery] = useState("");
   const [searched, setSearched] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
-  const [aiData, setAiData] = useState(null);
   
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [micEnabled, setMicEnabled] = useState(false);
 
   // Estado para el micrófono del input de búsqueda
   const [inputMicActive, setInputMicActive] = useState(false);
   const searchMicRef = useRef(null);
-  
-  const cleanUrl = (url) => {
-    if (!url) return "";
-    return url.replace(/\[|\]|\(.*?\)/g, "").trim();
-  };
-
-  const API_URL = "https://micontenidodidactico.onrender.com/api/materials";
 
   const fetchMaterials = async () => {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    return data;
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error("Error en la petición de materiales");
+      return await res.json();
+    } catch (error) {
+      console.error("fetchMaterials Error:", error);
+      return [];
+    }
   };
 
-  const [micEnabled, setMicEnabled] = useState(false);
-
   const realSearch = (materials, value) => {
+    if (!Array.isArray(materials)) return [];
     return materials.filter((item) =>
-      item.titulo.toLowerCase().includes(value.toLowerCase())
+      item?.titulo?.toLowerCase().includes(value.toLowerCase())
     );
   };
 
-  const handleSearch = async (forcedQuery) => {
+  const handleSearch = useCallback(async (forcedQuery) => {
     const textoABuscar = typeof forcedQuery === "string" ? forcedQuery : query;
-    if (!textoABuscar.trim()) return;
+    if (!textoABuscar || !textoABuscar.trim()) return;
 
     setLoading(true);
     setSearched(true);
 
     setSearchHistory((prev) => {
       const updated = [textoABuscar, ...prev];
-      return updated.slice(0, 10);
+      return Array.from(new Set(updated)).slice(0, 10);
     });
 
     try {
@@ -68,12 +63,12 @@ export default function Home() {
         setResults([]);
       }
     } catch (error) {
-      console.error(error);
+      console.error("handleSearch Error:", error);
       setResults([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [query]);
 
   /* ---------------- 🎙️ RECONOCIMIENTO DE VOZ DIRECTO EN EL INPUT ---------------- */
   const toggleInputMic = () => {
@@ -102,7 +97,6 @@ export default function Home() {
       const transcript = e.results[0][0].transcript;
       setQuery(transcript);
       setInputMicActive(false);
-      // Búsqueda automática una vez dictado
       handleSearch(transcript);
     };
 
@@ -135,6 +129,7 @@ export default function Home() {
   };
 
   const handleVoiceCommand = (cmd) => {
+    if (!cmd) return;
     console.log("Comando de voz recibido en Home:", cmd);
 
     if (cmd.type === "SEARCH") {
@@ -145,7 +140,7 @@ export default function Home() {
       setQuery(valorLimpio);
       handleSearch(valorLimpio);
     }
-  
+
     if (cmd.type === "OPEN_PANEL") setSearched(true);
     if (cmd.type === "CLOSE_PANEL") {
       setSearched(false);
@@ -194,7 +189,7 @@ export default function Home() {
           if (numero && imagenes[numero - 1]) {
             setSelectedImage(imagenes[numero - 1]);
           } else {
-            setSelectedImage(imagenes[0]); 
+            setSelectedImage(imagenes[0]);
           }
         }
       } else if (accionReal === "CERRAR") {
@@ -209,7 +204,7 @@ export default function Home() {
       window.removeEventListener("voz-buscar-titulo", manejarBusquedaVoz);
       window.removeEventListener("voz-control-imagenes", manejarImagenesVoz);
     };
-  }, [results]);
+  }, [results, handleSearch]);
 
   if (showIntro) {
     return <Loader />;
@@ -217,7 +212,6 @@ export default function Home() {
 
   return (
     <div className="relative flex h-[100dvh] w-full bg-slate-950 text-white overflow-hidden select-none">
-      
       <style>{`
         @keyframes expandLine {
           from { width: 0%; opacity: 0; }
@@ -262,7 +256,7 @@ export default function Home() {
         </>
       )}
 
-      
+      {/* VISTA MÓVIL */}
       <div className="flex md:hidden flex-1 flex-col relative w-full h-full max-h-full z-10 overflow-hidden justify-between">
         <div className={`transition-all duration-500 ease-in-out left-0 w-full px-4 z-30 ${
           isCompact ? "absolute top-4" : "absolute top-1/3 -translate-y-1/2"
@@ -273,8 +267,7 @@ export default function Home() {
               <p className="text-xs text-slate-400 mt-1">Escribe tu tema de estudio</p>
             </div>
           )}
-          
-          
+
           <div className="relative max-w-sm mx-auto shadow-xl flex items-center">
             <input
               value={query}
@@ -399,7 +392,6 @@ export default function Home() {
                 </div>
               </div>
             )}
-
           </div>
         )}
 
@@ -408,7 +400,7 @@ export default function Home() {
         )}
       </div>
 
-      
+      {/* VISTA DESKTOP */}
       <div className="hidden md:flex flex-1 relative flex-col justify-between p-12 overflow-y-auto z-10 text-scroll">
         <div className={`fixed transition-all duration-500 ease-in-out z-20 ${
           isCompact ? "top-6 left-6 w-[320px] scale-95" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
@@ -420,7 +412,6 @@ export default function Home() {
             </div>
           )}
 
-          
           <div className="relative flex items-center">
             <input
               value={query}
@@ -529,7 +520,6 @@ export default function Home() {
           />
         </div>
       )}
-
     </div>
   );
 }
