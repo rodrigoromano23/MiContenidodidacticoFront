@@ -5,7 +5,7 @@ import CalcGame from "../CalcGame";
 import Swal from "sweetalert2";
 import { jsPDF } from "jspdf";
 // 1. IMPORTANTE: Importamos tu hook propio
-import { useNarradorPropio } from '../hooks/useNarradorPropio';
+import { useNarradorPropio } from "../../hooks/useNarradorPropio";
 
 const SECTIONS = {
   history: "Historial",
