@@ -261,7 +261,7 @@ export default function Home() {
         </>
       )}
 
-      {/* Interfaz Móvil */}
+      
       <div className="flex md:hidden flex-1 flex-col relative w-full h-full max-h-full z-10 overflow-hidden justify-between">
         <div className={`transition-all duration-500 ease-in-out left-0 w-full px-4 z-30 ${
           isCompact ? "absolute top-4" : "absolute top-1/3 -translate-y-1/2"
@@ -273,7 +273,7 @@ export default function Home() {
             </div>
           )}
           
-          {/* BUSCADOR MÓVIL */}
+          
           <div className="relative max-w-sm mx-auto shadow-xl flex items-center">
             <input
               value={query}
@@ -407,7 +407,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* Interfaz Escritorio */}
+      
       <div className="hidden md:flex flex-1 relative flex-col justify-between p-12 overflow-y-auto z-10 text-scroll">
         <div className={`fixed transition-all duration-500 ease-in-out z-20 ${
           isCompact ? "top-6 left-6 w-[320px] scale-95" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
@@ -419,7 +419,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* BUSCADOR ESCRITORIO */}
+          
           <div className="relative flex items-center">
             <input
               value={query}
