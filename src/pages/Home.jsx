@@ -70,48 +70,66 @@ export default function Home() {
     }
   }, [query]);
 
-  /* ---------------- 🎙️ RECONOCIMIENTO DE VOZ DIRECTO EN EL INPUT ---------------- */
-  const toggleInputMic = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+ /* ---------------- 🎙️ RECONOCIMIENTO DE VOZ DIRECTO EN EL INPUT ---------------- */
+const toggleInputMic = () => {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      alert("Tu navegador no soporta reconocimiento de voz.");
-      return;
-    }
+  if (!SpeechRecognition) {
+    alert("Tu navegador no soporta reconocimiento de voz.");
+    return;
+  }
 
-    if (inputMicActive) {
-      if (searchMicRef.current) searchMicRef.current.stop();
-      setInputMicActive(false);
-      return;
-    }
+  if (inputMicActive) {
+    if (searchMicRef.current) searchMicRef.current.stop();
+    setInputMicActive(false);
+    return;
+  }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "es-ES";
-    recognition.interimResults = false;
+  const recognition = new SpeechRecognition();
+  recognition.lang = "es-ES";
+  recognition.interimResults = false;
 
-    recognition.onstart = () => {
-      setInputMicActive(true);
-    };
-
-    recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      setQuery(transcript);
-      setInputMicActive(false);
-      handleSearch(transcript);
-    };
-
-    recognition.onerror = (e) => {
-      console.error("Error en micrófono de búsqueda:", e.error);
-      setInputMicActive(false);
-    };
-
-    recognition.onend = () => {
-      setInputMicActive(false);
-    };
-
-    searchMicRef.current = recognition;
-    recognition.start();
+  recognition.onstart = () => {
+    setInputMicActive(true);
   };
+
+  recognition.onresult = (e) => {
+    // 1. Convertimos a minúsculas y quitamos puntos/comas finales que agrega el navegador
+    let transcript = e.results[0][0].transcript
+      .toLowerCase()
+      .replace(/[\.,]+/g, "")
+      .trim();
+
+    console.log("Dictado detectado en input:", transcript);
+
+    // 2. Evaluamos si dijo "buscar [tema]" o "busca [tema]"
+    const match = transcript.match(/^(?:buscar|busca)\s+(.+)/i);
+
+    let temaFinal = transcript;
+
+    if (match && match[1]) {
+      // Si dijo "buscar célula", nos quedamos solo con "célula"
+      temaFinal = match[1].trim();
+    }
+
+    // 3. Actualizamos la caja de texto y ejecutamos la búsqueda limpia
+    setQuery(temaFinal);
+    setInputMicActive(false);
+    handleSearch(temaFinal);
+  };
+
+  recognition.onerror = (e) => {
+    console.error("Error en micrófono de búsqueda:", e.error);
+    setInputMicActive(false);
+  };
+
+  recognition.onend = () => {
+    setInputMicActive(false);
+  };
+
+  searchMicRef.current = recognition;
+  recognition.start();
+};
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
