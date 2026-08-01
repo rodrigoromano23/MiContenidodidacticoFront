@@ -97,7 +97,7 @@ const toggleInputMic = () => {
     // 1. Convertimos a minúsculas y quitamos puntos/comas finales que agrega el navegador
     let transcript = e.results[0][0].transcript
       .toLowerCase()
-      .replace(/[\.,]+/g, "")
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?¿¡!]/g, "")
       .trim();
 
     console.log("Dictado detectado en input:", transcript);
