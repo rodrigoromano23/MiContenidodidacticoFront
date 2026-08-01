@@ -14,7 +14,7 @@ export default function Home() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
-  
+
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [micEnabled, setMicEnabled] = useState(false);
@@ -41,95 +41,107 @@ export default function Home() {
     );
   };
 
-  const handleSearch = useCallback(async (forcedQuery) => {
-    const textoABuscar = typeof forcedQuery === "string" ? forcedQuery : query;
-    if (!textoABuscar || !textoABuscar.trim()) return;
+  const handleSearch = useCallback(
+    async (forcedQuery) => {
+      const textoABuscar =
+        typeof forcedQuery === "string" ? forcedQuery : query;
+      if (!textoABuscar || !textoABuscar.trim()) return;
 
-    setLoading(true);
-    setSearched(true);
+      setLoading(true);
+      setSearched(true);
 
-    setSearchHistory((prev) => {
-      const updated = [textoABuscar, ...prev];
-      return Array.from(new Set(updated)).slice(0, 10);
-    });
+      setSearchHistory((prev) => {
+        const updated = [textoABuscar, ...prev];
+        return Array.from(new Set(updated)).slice(0, 10);
+      });
+
+      try {
+        const materials = await fetchMaterials();
+        const filtered = realSearch(materials, textoABuscar);
+
+        if (filtered.length > 0) {
+          setResults([filtered[0]]);
+        } else {
+          setResults([]);
+        }
+      } catch (error) {
+        console.error("handleSearch Error:", error);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [query]
+  );
+
+  /* ---------------- 🎙️ RECONOCIMIENTO DE VOZ DIRECTO EN EL INPUT ---------------- */
+  const toggleInputMic = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Tu navegador no soporta reconocimiento de voz.");
+      return;
+    }
+
+    if (inputMicActive) {
+      if (searchMicRef.current) {
+        try {
+          searchMicRef.current.stop();
+        } catch (e) {
+          console.error("Error al detener micro:", e);
+        }
+      }
+      setInputMicActive(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setInputMicActive(true);
+    };
+
+    recognition.onresult = (e) => {
+      let transcript = e.results[0][0].transcript
+        .toLowerCase()
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?¿¡!]/g, "")
+        .trim();
+
+      console.log("Dictado detectado en input:", transcript);
+
+      const match = transcript.match(/^(?:buscar|busca)\s+(.+)/i);
+      let temaFinal = transcript;
+
+      if (match && match[1]) {
+        temaFinal = match[1].trim();
+      }
+
+      setQuery(temaFinal);
+      setInputMicActive(false);
+      handleSearch(temaFinal);
+    };
+
+    recognition.onerror = (e) => {
+      console.error("Error en micrófono de búsqueda:", e.error);
+      setInputMicActive(false);
+    };
+
+    recognition.onend = () => {
+      setInputMicActive(false);
+    };
+
+    searchMicRef.current = recognition;
 
     try {
-      const materials = await fetchMaterials();
-      const filtered = realSearch(materials, textoABuscar);
-
-      if (filtered.length > 0) {
-        setResults([filtered[0]]);
-      } else {
-        setResults([]);
-      }
-    } catch (error) {
-      console.error("handleSearch Error:", error);
-      setResults([]);
-    } finally {
-      setLoading(false);
+      recognition.start();
+    } catch (err) {
+      console.error("No se pudo iniciar el reconocimiento de voz:", err);
+      setInputMicActive(false);
     }
-  }, [query]);
-
- /* ---------------- 🎙️ RECONOCIMIENTO DE VOZ DIRECTO EN EL INPUT ---------------- */
-const toggleInputMic = () => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("Tu navegador no soporta reconocimiento de voz.");
-    return;
-  }
-
-  if (inputMicActive) {
-    if (searchMicRef.current) searchMicRef.current.stop();
-    setInputMicActive(false);
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = "es-ES";
-  recognition.interimResults = false;
-
-  recognition.onstart = () => {
-    setInputMicActive(true);
   };
-
-  recognition.onresult = (e) => {
-    // 1. Convertimos a minúsculas y quitamos puntos/comas finales que agrega el navegador
-    let transcript = e.results[0][0].transcript
-      .toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?¿¡!]/g, "")
-      .trim();
-
-    console.log("Dictado detectado en input:", transcript);
-
-    // 2. Evaluamos si dijo "buscar [tema]" o "busca [tema]"
-    const match = transcript.match(/^(?:buscar|busca)\s+(.+)/i);
-
-    let temaFinal = transcript;
-
-    if (match && match[1]) {
-      // Si dijo "buscar célula", nos quedamos solo con "célula"
-      temaFinal = match[1].trim();
-    }
-
-    // 3. Actualizamos la caja de texto y ejecutamos la búsqueda limpia
-    setQuery(temaFinal);
-    setInputMicActive(false);
-    handleSearch(temaFinal);
-  };
-
-  recognition.onerror = (e) => {
-    console.error("Error en micrófono de búsqueda:", e.error);
-    setInputMicActive(false);
-  };
-
-  recognition.onend = () => {
-    setInputMicActive(false);
-  };
-
-  searchMicRef.current = recognition;
-  recognition.start();
-};
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -151,9 +163,10 @@ const toggleInputMic = () => {
     console.log("Comando de voz recibido en Home:", cmd);
 
     if (cmd.type === "SEARCH") {
-      const valorLimpio = cmd.value && typeof cmd.value === "string"
-        ? cmd.value.replace(/[\.,]+/g, "").trim()
-        : cmd.value;
+      const valorLimpio =
+        cmd.value && typeof cmd.value === "string"
+          ? cmd.value.replace(/[\.,]+/g, "").trim()
+          : cmd.value;
 
       setQuery(valorLimpio);
       handleSearch(valorLimpio);
@@ -276,13 +289,19 @@ const toggleInputMic = () => {
 
       {/* VISTA MÓVIL */}
       <div className="flex md:hidden flex-1 flex-col relative w-full h-full max-h-full z-10 overflow-hidden justify-between">
-        <div className={`transition-all duration-500 ease-in-out left-0 w-full px-4 z-30 ${
-          isCompact ? "absolute top-4" : "absolute top-1/3 -translate-y-1/2"
-        }`}>
+        <div
+          className={`transition-all duration-500 ease-in-out left-0 w-full px-4 z-30 ${
+            isCompact ? "absolute top-4" : "absolute top-1/3 -translate-y-1/2"
+          }`}
+        >
           {!isCompact && (
             <div className="text-center mb-4">
-              <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-md">Biblioteca Digital</h1>
-              <p className="text-xs text-slate-400 mt-1">Escribe tu tema de estudio</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-md">
+                Biblioteca Digital
+              </h1>
+              <p className="text-xs text-slate-400 mt-1">
+                Escribe tu tema de estudio
+              </p>
             </div>
           )}
 
@@ -298,8 +317,11 @@ const toggleInputMic = () => {
               <button
                 type="button"
                 onClick={toggleInputMic}
+                aria-label="Dictar por voz"
                 className={`p-2 rounded-full transition ${
-                  inputMicActive ? "bg-red-500 text-white animate-pulse" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  inputMicActive
+                    ? "bg-red-500 text-white animate-pulse"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
                 title="Dictar por voz"
               >
@@ -308,6 +330,7 @@ const toggleInputMic = () => {
               <button
                 type="button"
                 onClick={() => handleSearch()}
+                aria-label="Buscar"
                 className="bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full transition shadow-md flex items-center justify-center"
                 title="Buscar"
               >
@@ -326,7 +349,13 @@ const toggleInputMic = () => {
         {searched && results.length > 0 && (
           <div className="w-full flex-1 overflow-y-auto px-4 pt-24 pb-24 space-y-6">
             <div className="text-center pt-2">
-              <h2 className="text-3xl font-bold text-center text-white tracking-wide" style={{ fontFamily: '"Times New Roman", serif', textShadow: "0 0 10px rgba(234, 179, 8, 0.7)" }}>
+              <h2
+                className="text-3xl font-bold text-center text-white tracking-wide"
+                style={{
+                  fontFamily: '"Times New Roman", serif',
+                  textShadow: "0 0 10px rgba(234, 179, 8, 0.7)",
+                }}
+              >
                 {results[0].titulo}
               </h2>
               <div className="h-[2px] bg-cyan-400 max-w-[150px] mx-auto mt-2 opacity-80" />
@@ -335,58 +364,102 @@ const toggleInputMic = () => {
             <div className="max-w-sm mx-auto w-full">
               {seccionAbierta === "historial" && (
                 <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-2 mb-4">
-                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Búsquedas Recientes</p>
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">
+                    Búsquedas Recientes
+                  </p>
                   {searchHistory.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {searchHistory.map((h, idx) => (
-                        <span key={idx} onClick={() => { setQuery(h); handleSearch(h); }} className="bg-slate-950 text-cyan-400 px-2.5 py-1 rounded border border-white/5 text-[11px] font-medium cursor-pointer">{h}</span>
+                        <span
+                          key={idx}
+                          onClick={() => {
+                            setQuery(h);
+                            handleSearch(h);
+                          }}
+                          className="bg-slate-950 text-cyan-400 px-2.5 py-1 rounded border border-white/5 text-[11px] font-medium cursor-pointer"
+                        >
+                          {h}
+                        </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-slate-500 text-center py-1">Historial vacío.</p>
+                    <p className="text-slate-500 text-center py-1">
+                      Historial vacío.
+                    </p>
                   )}
                 </div>
               )}
 
               {seccionAbierta === "keywords" && (
                 <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-1 mb-4">
-                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Palabras Clave del Tema</p>
-                  <p className="text-slate-300 pt-1">Aquí van las palabras clave extraídas automáticamente de: <span className="text-white italic">"{results[0].titulo}"</span>.</p>
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">
+                    Palabras Clave del Tema
+                  </p>
+                  <p className="text-slate-300 pt-1">
+                    Aquí van las palabras clave extraídas automáticamente de:{" "}
+                    <span className="text-white italic">
+                      "{results[0].titulo}"
+                    </span>
+                    .
+                  </p>
                 </div>
               )}
 
               {seccionAbierta === "gramatica" && (
                 <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-1 mb-4">
-                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Análisis Gramatical</p>
-                  <p className="text-slate-300 pt-1">Módulo interactivo para analizar las estructuras sintácticas y tiempos verbales del texto actual.</p>
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">
+                    Análisis Gramatical
+                  </p>
+                  <p className="text-slate-300 pt-1">
+                    Módulo interactivo para analizar las estructuras sintácticas
+                    y tiempos verbales del texto actual.
+                  </p>
                 </div>
               )}
 
               {seccionAbierta === "narrador" && (
                 <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs text-center space-y-2 mb-4">
-                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Texto a Voz (TTS)</p>
-                  <button className="bg-cyan-500 text-slate-950 font-bold px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider shadow-md">▶️ Escuchar Contenido</button>
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">
+                    Texto a Voz (TTS)
+                  </p>
+                  <button className="bg-cyan-500 text-slate-950 font-bold px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider shadow-md">
+                    ▶️ Escuchar Contenido
+                  </button>
                 </div>
               )}
 
               {seccionAbierta === "juego" && (
                 <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs space-y-1.5 mb-4">
-                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Desafío Matemático (Cálculos)</p>
-                  <p className="text-slate-300">¡Hora de agilizar la mente! Resolvé el siguiente cálculo basado en el contenido didáctico.</p>
+                  <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">
+                    Desafío Matemático (Cálculos)
+                  </p>
+                  <p className="text-slate-300">
+                    ¡Hora de agilizar la mente! Resolvé el siguiente cálculo
+                    basado en el contenido didáctico.
+                  </p>
                 </div>
               )}
 
               {seccionAbierta === "micro" && (
                 <div className="bg-slate-900/90 border border-red-500/30 p-4 rounded-xl shadow-xl text-xs text-center space-y-1 mb-4">
-                  <p className="text-red-400 font-bold font-mono text-[10px] uppercase tracking-wider">Asistente por Voz</p>
-                  <p className="text-slate-300">Micrófono {micEnabled ? "ACTIVADO" : "DESACTIVADO"}. Comandos de control listos para escuchar.</p>
+                  <p className="text-red-400 font-bold font-mono text-[10px] uppercase tracking-wider">
+                    Asistente por Voz
+                  </p>
+                  <p className="text-slate-300">
+                    Micrófono {micEnabled ? "ACTIVADO" : "DESACTIVADO"}.
+                    Comandos de control listos para escuchar.
+                  </p>
                 </div>
               )}
 
               {seccionAbierta === "pdf" && (
                 <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl shadow-xl text-xs text-center space-y-1 mb-4">
-                  <p className="text-emerald-400 font-bold font-mono text-[10px] uppercase tracking-wider">Documento Exportado</p>
-                  <p className="text-slate-300">El PDF se ha estructurado con éxito para su lectura offline.</p>
+                  <p className="text-emerald-400 font-bold font-mono text-[10px] uppercase tracking-wider">
+                    Documento Exportado
+                  </p>
+                  <p className="text-slate-300">
+                    El PDF se ha estructurado con éxito para su lectura offline.
+                  </p>
                 </div>
               )}
             </div>
@@ -399,12 +472,24 @@ const toggleInputMic = () => {
 
             {getImagesArray(results[0]).length > 0 && (
               <div className="space-y-2">
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">Imágenes Adjuntas</p>
+                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">
+                  Imágenes Adjuntas
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   {getImagesArray(results[0]).map((imgUrl, index) => (
-                    <div key={index} onClick={() => setSelectedImage(imgUrl)} className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg cursor-pointer">
-                      <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10">{index + 1}</div>
-                      <img src={imgUrl} alt={`Móvil ${index + 1}`} className="w-full h-full object-cover" />
+                    <div
+                      key={index}
+                      onClick={() => setSelectedImage(imgUrl)}
+                      className="relative aspect-[16/10] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-lg cursor-pointer"
+                    >
+                      <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10">
+                        {index + 1}
+                      </div>
+                      <img
+                        src={imgUrl}
+                        alt={`Móvil ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   ))}
                 </div>
@@ -414,15 +499,21 @@ const toggleInputMic = () => {
         )}
 
         {searched && results.length === 0 && !loading && (
-          <p className="text-center text-xs text-slate-400 mt-20">No se encontraron resultados disponibles.</p>
+          <p className="text-center text-xs text-slate-400 mt-20">
+            No se encontraron resultados disponibles.
+          </p>
         )}
       </div>
 
       {/* VISTA DESKTOP */}
       <div className="hidden md:flex flex-1 relative flex-col justify-between p-12 overflow-y-auto z-10 text-scroll">
-        <div className={`fixed transition-all duration-500 ease-in-out z-20 ${
-          isCompact ? "top-6 left-6 w-[320px] scale-95" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
-        }`}>
+        <div
+          className={`fixed transition-all duration-500 ease-in-out z-20 ${
+            isCompact
+              ? "top-6 left-6 w-[320px] scale-95"
+              : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
+          }`}
+        >
           {!isCompact && (
             <div className="text-center mb-6">
               <h1 className="text-4xl font-bold">Biblioteca Digital</h1>
@@ -442,8 +533,11 @@ const toggleInputMic = () => {
               <button
                 type="button"
                 onClick={toggleInputMic}
+                aria-label="Dictar por voz"
                 className={`p-2.5 rounded-full transition ${
-                  inputMicActive ? "bg-red-500 text-white animate-pulse" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  inputMicActive
+                    ? "bg-red-500 text-white animate-pulse"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
                 title="Dictar por voz"
               >
@@ -452,6 +546,7 @@ const toggleInputMic = () => {
               <button
                 type="button"
                 onClick={() => handleSearch()}
+                aria-label="Buscar"
                 className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition shadow-md flex items-center justify-center active:scale-95"
                 title="Buscar"
               >
@@ -472,14 +567,29 @@ const toggleInputMic = () => {
             {results.map((item, i) => (
               <div key={i} className="w-full flex flex-col space-y-6">
                 <div className="w-full flex-shrink-0">
-                  <h2 className="text-left text-white tracking-wide" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: "56px", fontWeight: "bold", textShadow: "0 0 15px rgba(234, 179, 8, 0.6), 0 0 2px rgba(234, 179, 8, 0.9)" }}>
+                  <h2
+                    className="text-left text-white tracking-wide"
+                    style={{
+                      fontFamily: '"Times New Roman", Times, serif',
+                      fontSize: "56px",
+                      fontWeight: "bold",
+                      textShadow:
+                        "0 0 15px rgba(234, 179, 8, 0.6), 0 0 2px rgba(234, 179, 8, 0.9)",
+                    }}
+                  >
                     {item.titulo}
                   </h2>
                   <div className="h-[2px] bg-white mt-3 opacity-90 animate-loading-line origin-left" />
                 </div>
 
                 <div className="w-full flex-1 bg-sky-500/10 backdrop-blur-md border border-sky-400/20 rounded-xl p-6 shadow-2xl overflow-y-auto text-scroll min-h-[450px] max-h-[65vh]">
-                  <div className="text-gray-100 leading-9 whitespace-pre-wrap pr-2" style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: "20px" }}>
+                  <div
+                    className="text-gray-100 leading-9 whitespace-pre-wrap pr-2"
+                    style={{
+                      fontFamily: "Arial, Helvetica, sans-serif",
+                      fontSize: "20px",
+                    }}
+                  >
                     <TypeWriter text={item.contenido} />
                   </div>
                 </div>
@@ -490,12 +600,24 @@ const toggleInputMic = () => {
 
                 {getImagesArray(item).length > 0 && (
                   <div className="w-full pt-2 flex-shrink-0">
-                    <p className="text-xs text-sky-300 mb-3 font-semibold uppercase tracking-widest">Imágenes Adjuntas</p>
+                    <p className="text-xs text-sky-300 mb-3 font-semibold uppercase tracking-widest">
+                      Imágenes Adjuntas
+                    </p>
                     <div className="grid grid-cols-4 gap-4 overflow-visible">
                       {getImagesArray(item).map((imgUrl, index) => (
-                        <div key={index} onClick={() => setSelectedImage(imgUrl)} className="group relative aspect-[16/10] bg-black/40 rounded-lg overflow-hidden border border-white/10 shadow-md cursor-pointer hover:scale-[1.02] hover:border-sky-400 transition-all duration-300">
-                          <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">{index + 1}</div>
-                          <img src={imgUrl} alt={`Galería ${index + 1}`} className="w-full h-full object-cover" />
+                        <div
+                          key={index}
+                          onClick={() => setSelectedImage(imgUrl)}
+                          className="group relative aspect-[16/10] bg-black/40 rounded-lg overflow-hidden border border-white/10 shadow-md cursor-pointer hover:scale-[1.02] hover:border-sky-400 transition-all duration-300"
+                        >
+                          <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">
+                            {index + 1}
+                          </div>
+                          <img
+                            src={imgUrl}
+                            alt={`Galería ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       ))}
                     </div>
@@ -518,10 +640,26 @@ const toggleInputMic = () => {
       )}
 
       {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md" onClick={() => setSelectedImage(null)}>
-          <button className="absolute top-6 right-6 text-white text-4xl font-light hover:text-sky-400 transition" onClick={() => setSelectedImage(null)}>✕</button>
-          <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center p-2 bg-white/5 border border-white/10 shadow-2xl rounded-sm" onClick={(e) => e.stopPropagation()}>
-            <img src={selectedImage} alt="Visualización ampliada" className="max-w-full max-h-[80vh] object-contain shadow-2xl" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            className="absolute top-6 right-6 text-white text-4xl font-light hover:text-sky-400 transition"
+            onClick={() => setSelectedImage(null)}
+            aria-label="Cerrar vista previa de imagen"
+          >
+            ✕
+          </button>
+          <div
+            className="max-w-[90vw] max-h-[85vh] flex items-center justify-center p-2 bg-white/5 border border-white/10 shadow-2xl rounded-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage}
+              alt="Visualización ampliada"
+              className="max-w-full max-h-[80vh] object-contain shadow-2xl"
+            />
           </div>
         </div>
       )}
